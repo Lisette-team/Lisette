@@ -224,6 +224,7 @@ body.panel-open main { padding-bottom: 46vh; }
       <div class="log-box">
         <h3>Ce s-a schimbat</h3>
         <ol>
+          <li><span class="date">Versiunea 11</span><br>Coloană nouă <code>works.publisher_name</code>: numele editurii ca text simplu, pentru cărțile a căror editură nu e pe Lisette. Era deja în documentul de design, lipsea de aici. <code>domain_events.channels</code> e listă fixă (<code>notification_channel[]</code>) în ambele documente. ISBN-ul trebuie să înceapă cu 978 sau 979, ca un cod de bare de produs să nu treacă drept carte.</li>
           <li><span class="date">Versiunea 10</span><br>Planurile de implementare au fost rescrise scurt, pe modelul nou. Fiecare task numește tabelele pe care le creează din această schemă. <code>domain_events</code> se creează acum în fundație (task 01.3), ca amândoi să-l puteți folosi de la început. Schema nu s-a schimbat.</li>
           <li><span class="date">Versiunea 9</span><br>„Aceasta e cartea?” la adăugarea manuală: căutare după titlu și autor asemănător în <code>works</code> (index <code>pg_trgm</code>), ca să nu apară aceeași carte de două ori. Fără tabele sau coloane noi.</li>
           <li><span class="date">Versiunea 7</span><br>Descrierea lui <code>works</code> spune explicit că e tabelul central de cărți. Schema nu s-a schimbat.</li>
@@ -248,11 +249,12 @@ body.panel-open main { padding-bottom: 46vh; }
           <li>Publicația poate distribui citate ca preview din cărțile ei publicate sau din manuscrise primite, cu acordul autorului pe textul exact.</li>
           <li>La adăugarea manuală a unei cărți, aplicația întreabă „Aceasta e cartea?” și arată cărțile asemănătoare; nu unește nimic automat.</li>
           <li>Apelurile: un singur tip, fără <code>kind</code>; apel fără dată de încheiere = mereu deschis; criteriile pe apel; genurile profilului separat.</li>
-        </ul>
-      </div>
-      <div class="log-box todo">
-        <h3>Decis de mine, de confirmat</h3>
-        <ol>
+          <li>Pagina cărții arată editura de pe Lisette (cu link) când legătura din <code>work_publishers</code> e confirmată; altfel numele din <code>publisher_name</code>, ca text simplu.</li>
+          <li>Canalele unei notificări sunt o listă fixă: <code>in_app</code>, <code>email</code>.</li>
+          <li>Aprobarea unei publicații cere mereu metoda de verificare.</li>
+          <li><code>publishers.reviewed_by</code> nu e vizibil în aplicație, ca să nu se afle cine sunt adminii.</li>
+          <li>După ce o publicație e aprobată sau respinsă, nu își mai poate schimba singură numele și tipul.</li>
+          <li>Doar o publicație în așteptare poate fi aprobată sau respinsă; reevaluarea uneia respinse nu e încă decisă.</li>
           <li>Manuscrisul = versiunile PDF ale unei opere (<code>works</code> + <code>manuscript_versions</code>), fără tabel <code>manuscripts</code> separat.</li>
           <li>Cererea de cont de publicație e chiar rândul din <code>publishers</code>, cu <code>approval_status = pending</code>; fără tabel separat de cereri.</li>
           <li>Cerințele unui apel sunt 5 coloane da/nu pe <code>calls</code>.</li>
@@ -263,6 +265,13 @@ body.panel-open main { padding-bottom: 46vh; }
           <li>Apelurile unei publicații neaprobate nu apar ca deschise până la aprobare.</li>
           <li><code>sharing_policy</code> și <code>resubmission_allowed</code> rămân pe publicație și se aplică tuturor apelurilor ei.</li>
           <li>Un apel fără genuri acceptă orice gen.</li>
+          <li>Lista de pornire de genuri (12): poezie, proză scurtă, roman, nuvelă, eseu, dramaturgie, literatură pentru copii, young adult, memorialistică, non-ficțiune, SF și fantasy, polițist și thriller.</li>
+        </ul>
+      </div>
+      <div class="log-box todo">
+        <h3>Decis de mine, de confirmat</h3>
+        <ol>
+          <li>Nimic de confirmat acum.</li>
         </ol>
       </div>
     </div>
@@ -366,7 +375,7 @@ const TABLES = [
     "id*=accounts|uuid|același id ca în accounts; doar conturi de tip publisher", "kind|publisher_kind|",
     "name|text|1–120 caractere", "intro?|text|max 2000 caractere (propunere)", "logo_path?|text|bucket public-media", "website?|text|URL https",
     "approval_status|approval_status|implicit pending", "verification_method?|verification_method|completat la aprobare",
-    "reviewed_by>admins?|uuid|adminul care a decis", "reviewed_at?|timestamptz|",
+    "reviewed_by>admins?|uuid|adminul care a decis; nu e vizibil în aplicație", "reviewed_at?|timestamptz|",
     "resubmission_allowed|boolean|implicit false; retrimitere după retragere/respingere, pentru toate apelurile",
     "sharing_policy|sharing_policy|implicit author_controlled; pentru toate apelurile", ...TS],
     "Criteriile de primire (cerințe, limbi, genuri) sunt pe fiecare apel din calls. „Primește manuscrise acum” se calculează: are cel puțin un apel deschis."),
@@ -385,7 +394,7 @@ const TABLES = [
   T("works", "works", "setari", "Tabelul central de cărți: fiecare carte e un singur rând, comun pentru toți utilizatorii; notele, recenziile, bibliotecile, fragmentele și evenimentele indică spre el. Poate fi o carte publicată găsită după ISBN sau un proiect nepublicat al unui autor. Secțiunea Work in progress de pe profil = operele cu owner_id = autorul, visibility = public și is_published = false, împreună cu fragmentele lor permise. Un proiect e privat până când autorul îl face public.", [
     "id*|uuid|", "title|text|1–200 caractere; căutare după asemănare (index pg_trgm) pentru „Aceasta e cartea?”", "description?|text|max 2000 caractere (propunere)",
     "owner_id>profiles?|uuid|autorul, pentru proiecte proprii; gol la cărțile din catalog", "is_published|boolean|implicit false; doar cărțile publicate pot primi note/recenzii",
-    "isbn?|text|unic; ISBN-13 (13 cifre), validat cu cifra de control", "author_names|text[]|numele autorilor din catalog; implicit {}; inclus în căutarea „Aceasta e cartea?”",
+    "isbn?|text|unic; ISBN-13 (13 cifre, începe cu 978 sau 979), validat cu cifra de control", "author_names|text[]|numele autorilor din catalog; implicit {}; inclus în căutarea „Aceasta e cartea?”", "publisher_name?|text|numele editurii din catalog; afișat ca text simplu când editura nu are o legătură confirmată în work_publishers (de exemplu, nu e pe Lisette)",
     "language?|text|cod ISO 639-1, ex. ro", "genre_id>genres?|uuid|", "cover_path?|text|copertă în public-media",
     "visibility|work_visibility|implicit private", "source|work_source|", "external_id?|text|ID-ul din Open Library", ...TSU],
     "ISBN unic: o carte cu ISBN apare o singură dată. La adăugarea manuală, aplicația arată întâi cărțile asemănătoare („Aceasta e cartea?”); persoana alege una sau creează una nouă. Cărțile nu se unesc niciodată automat."),

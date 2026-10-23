@@ -130,7 +130,7 @@ erDiagram
 
 | Table | Key columns | Notes |
 |---|---|---|
-| `works` | `id`, `title`, `description`, `owner_id` null → `profiles` (author-owned projects), `is_published`, `isbn` unique null, `author_names text[]` (from metadata, for authors not on Lisette), `publisher_name` text null, `language`, `genre_id` null, `cover_path`, `visibility` (`private`/`public`), `source` (`author`/`isbn_lookup`/`manual`), `external_id` | Central book table: one row per book, shared by all users. ISBN lookups are cached here. Manual adds first search similar titles/authors (`pg_trgm` index on `title` and `author_names`) for "Is this the book?"; never auto-merged. Unpublished works are private until the author makes them public (Work in progress). Ratings/reviews only when `is_published`. |
+| `works` | `id`, `title`, `description`, `owner_id` null → `profiles` (author-owned projects), `is_published`, `isbn` unique null (ISBN-13 starting 978/979, check digit validated), `author_names text[]` (from metadata, for authors not on Lisette), `publisher_name` text null, `language`, `genre_id` null, `cover_path`, `visibility` (`private`/`public`), `source` (`author`/`isbn_lookup`/`manual`), `external_id` | Central book table: one row per book, shared by all users. ISBN lookups are cached here. Manual adds first search similar titles/authors (`pg_trgm` index on `title` and `author_names`) for "Is this the book?"; never auto-merged. Unpublished works are private until the author makes them public (Work in progress). Ratings/reviews only when `is_published`. The book page shows a publisher from a confirmed `work_publishers` link (with its profile); otherwise `publisher_name` as plain text (decided 2026-10-23). |
 | `work_authors` | `work_id`, `author_id` (PK both), `status` (`link_status`) | Explicit link to a Lisette author; never guessed. Owner's own work is created `confirmed`. |
 | `work_publishers` | `work_id`, `publisher_id` (PK both), `status` | Book-association rules still open; only `confirmed` is public. |
 | `portfolio_entries` | `id`, `author_id`, `kind` (`portfolio_kind`), `title`, `outlet`, `year`, `url`, `work_id` null | Self-reported, no verification badge. |
@@ -217,7 +217,7 @@ erDiagram
 | `discovery_variants` | `id`, `discovery_id`, `current_version_id`, `active` | |
 | `discovery_variant_versions` | `id`, `variant_id`, `body` null, `image_paths text[]`, `sharing_request_id` null, `created_at` | Immutable; private bucket. Manuscript excerpts need an approved sharing request before activation. |
 | `discovery_unlocks` | `discovery_id`, `user_id` (PK both), `variant_version_id`, `unlocked_at` | Created only by `unlock_discovery`, which checks distance and picks a random active variant once. Removal of the discovery makes content unavailable while the row stays. |
-| `domain_events` | `id`, `event_key` unique, `kind`, `subject_id`, `recipient_ids uuid[]`, `channels text[]`, `created_at` | Written inside mutation functions only, through `enqueue_event` (created in task 01.3). |
+| `domain_events` | `id`, `event_key` unique, `kind`, `subject_id`, `recipient_ids uuid[]`, `channels notification_channel[]`, `created_at` | Written inside mutation functions only, through `enqueue_event` (created in task 01.3). |
 | `notifications` | `id`, `event_id`, `recipient_id`, `channel` (`in_app`/`email`), `locale`, `status`, `attempts`, `sent_at`, `read_at`; unique (`event_id`, `recipient_id`, `channel`) | In-app inbox and email outbox in one table. |
 | `reports` | `id`, `reporter_id`, `target_type` (`profile`, `publisher`, `post`, `excerpt`, `comment`, `review`, `event`, `discovery`), `target_id`, `reason`, `details`, `status`, `created_at` | Polymorphic target; resolved by admins only. |
 | `moderation_actions` | `id`, `report_id` null, `admin_id`, `action` (`dismiss`/`hide`/`suspend`/`remove`), `target_type`, `target_id`, `note`, `created_at` | Audit trail. Admin rights never include the manuscript gateway. |
@@ -240,7 +240,7 @@ erDiagram
 
 Indexes beyond the uniqueness rules above, view names and the exact SQL of each policy. Each module plan task lists the tables it creates; limits marked "propunere" in `lisette-schema.html` are the starting values.
 
-## 12. Calls made in this design (not yet confirmed by the team)
+## 12. Calls made in this design (confirmed by the team 2026-10-23)
 
 1. Manuscripts are versions of a `works` row, not a separate table (matches plan 02).
 2. Publisher requests are `publishers` rows with `approval_status`, not a separate table.
