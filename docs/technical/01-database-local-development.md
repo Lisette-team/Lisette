@@ -93,3 +93,7 @@ Tests create their own users and roll back, so they need no fixtures. Shared dem
 ## Edge Functions
 
 None exist yet. Create one with `supabase functions new <name>`; `supabase start` serves every function at `http://127.0.0.1:54321/functions/v1/<name>`. Run `supabase functions serve` instead when you want live reload and logs.
+
+## CI
+
+Every pull request to `main` runs `.github/workflows/database.yml`: it starts the full local Supabase stack (`supabase start`, every container, with `config.toml`), applies all migrations from scratch, then runs `supabase db lint --fail-on error` and `supabase test db`. Run the same three commands locally before opening a PR. Keep the CLI version in the workflow equal to the one you use locally.

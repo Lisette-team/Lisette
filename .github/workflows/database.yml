@@ -1,0 +1,19 @@
+name: Database
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # Starts every Supabase container (Postgres, Auth, Storage, Edge Functions...) with config.toml
+      # and applies every migration from scratch: the clean rebuild check.
+      - run: supabase start
+      - run: supabase db lint --fail-on error
+      - run: supabase test db
