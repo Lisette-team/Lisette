@@ -8,12 +8,14 @@ import { colors, contentMaxWidth, fonts, space } from "./theme";
 type Props = {
   title?: string;
   backLabel?: string;
+  // Shown at the right of the title, such as the Profile button.
+  action?: ReactNode;
   children: ReactNode;
   // Actions stay pinned to the bottom of the column, as in the designs.
   footer?: ReactNode;
 };
 
-export function Screen({ title, backLabel, children, footer }: Props) {
+export function Screen({ title, backLabel, action, children, footer }: Props) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -33,6 +35,7 @@ export function Screen({ title, backLabel, children, footer }: Props) {
               <Text accessibilityRole="header" style={styles.title}>
                 {title}
               </Text>
+              {action}
             </View>
           ) : null}
           <View style={styles.body}>{children}</View>
@@ -63,7 +66,7 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.lg },
   back: { fontSize: 28, color: colors.ink },
-  title: { fontFamily: fonts.heading, fontSize: 28, color: colors.ink },
+  title: { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.ink },
   body: { flex: 1, gap: space.md },
   footer: { gap: space.sm, paddingTop: space.xl },
   error: { fontFamily: fonts.uiMedium, fontSize: 15, color: colors.burgundy },

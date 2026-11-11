@@ -26,19 +26,24 @@ Status: **proposal for review.** Derives screens and their appearance from `requ
 - Minimum 48 dp touch targets, Literata 16–18 sp with ~1.6 line height for reading.
 - Content requires sign-in everywhere; there are no signed-out content pages.
 
-## 2. Navigation (proposed)
+## 2. Navigation
 
-Bottom navigation on Android phone (rail on tablet, left sidebar on web), at most five items, role-aware:
+**Reader and writer menu (decided 2026-10-28).** A bottom bar on Android phones and tablets, laid out as in the v6 screens: four entries around a central round "+" button.
 
-| Reader / Author | Publisher |
+| Reader | Writer (after adding the writer profile) |
 |---|---|
-| Home (followed feed) | Home (followed feed) |
-| Discover (search, publishers, events map) | Submissions (inbox) |
-| Library | Discover |
-| Manuscripts (appears once author profile is activated) | Calls and events |
-| Profile (with Notifications bell in the top bar on every tab) | Profile |
+| Home | Home |
+| Discover | Discover |
+| + | + |
+| Library | Library |
+| Profile | Manuscripts; Profile opens from a button at the top right of each tab screen |
 
-Administration is a separate restricted web area, not part of the app navigation.
+- The writer profile is added from Profile (S-05). Until then Manuscripts is not in the menu.
+- Screens not built yet show a "Coming soon" placeholder. The "+" opens one too until its actions are defined.
+- The bar has a rounded top and the soft v6 `Umbră/plutitor` shadow; the selected entry is Burgundy with small Gold sparkles.
+- The Notifications bell in the top bar comes with notifications (06.1).
+
+**Still proposed.** Publisher menu: Home, Submissions (inbox), Discover, Calls and events, Profile. A web sidebar. Administration is a separate restricted web area, not part of the app navigation.
 
 ## 3. Screen catalogue
 
@@ -153,8 +158,8 @@ These carry the competition story; design them end-to-end before the rest.
 ## 5. Platform adaptation
 
 - **Android phone:** single column, bottom navigation, sheets for confirmation and reporting.
-- **Android tablet:** navigation rail, list/detail for inbox, manuscripts and notifications.
-- **Web:** sidebar; wide workspace for manuscript management and publisher review (S-20 to S-30, S-40 to S-44); map viewing and unlocked discoveries only; no ISBN scan or initial unlock.
+- **Android tablet:** the same bottom bar as phones (decided 2026-10-28). List/detail for inbox, manuscripts and notifications is still proposed; nothing tablet-specific is built yet.
+- **Web:** not built yet. Proposed: sidebar; wide workspace for manuscript management and publisher review (S-20 to S-30, S-40 to S-44); map viewing and unlocked discoveries only; no ISBN scan or initial unlock.
 
 ## 6. Open items affecting screens
 

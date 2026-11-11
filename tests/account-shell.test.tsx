@@ -75,8 +75,8 @@ describe("language_persists_and_private_routes_redirect", () => {
     await fireEvent.changeText(screen.getByLabelText("Parolă"), "correct-horse-1");
     await fireEvent.press(screen.getByRole("button", { name: "Intră în cont" }));
 
-    expect(await screen.findByText("Manuscripts")).toBeOnTheScreen();
-    expect(app.getPathname()).toBe("/manuscripts");
+    expect(await screen.findByRole("tab", { name: "Home" })).toBeOnTheScreen();
+    expect(app.getPathname()).toBe("/home");
   });
 
   test("wrong password shows an error and stays signed out", async () => {

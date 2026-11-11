@@ -17,3 +17,11 @@ jobs:
       - run: supabase start
       - run: supabase db lint --fail-on error
       - run: supabase test db
+      # HTTP tests against the running Edge Functions, with the local stack's keys.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=' | sed -e 's/^/SUPABASE_/' -e 's/"//g' >> "$GITHUB_ENV"
+      - run: npm run test:gateway

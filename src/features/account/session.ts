@@ -13,7 +13,7 @@ import i18n, { isLocale, type Locale } from "@/i18n";
 import * as storage from "@/lib/storage";
 import { supabase } from "@/lib/supabase";
 
-export type AuthSession = { userId: string; locale: Locale };
+export type AuthSession = { userId: string; locale: Locale; authorEnabled: boolean };
 
 // "loading" is kept apart from "signedOut" so a restored session never
 // triggers a redirect to the start screen while it is still being read.
@@ -42,6 +42,8 @@ type SessionContextValue = {
   resendVerification(email: string): Promise<Result>;
   requestPasswordReset(email: string): Promise<Result>;
   signOut(): Promise<void>;
+  // Re-reads the session context, for example after the writer profile is activated.
+  reload(): Promise<void>;
 };
 
 const LOCALE_KEY = "lisette.locale";
@@ -58,9 +60,9 @@ async function applyLocale(locale: Locale) {
 // { accountId, kind, locale, authorEnabled, approvalStatus }.
 export function sessionFromContext(data: unknown): AuthSession | null {
   if (!data || typeof data !== "object") return null;
-  const { accountId, locale } = data as { accountId?: unknown; locale?: unknown };
+  const { accountId, locale, authorEnabled } = data as { accountId?: unknown; locale?: unknown; authorEnabled?: unknown };
   if (typeof accountId !== "string" || !isLocale(locale)) return null;
-  return { userId: accountId, locale };
+  return { userId: accountId, locale, authorEnabled: authorEnabled === true };
 }
 
 async function loadSessionContext(): Promise<AuthSession | null> {
@@ -174,6 +176,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       },
       async signOut() {
         await supabase.auth.signOut();
+      },
+      async reload() {
+        // A failed re-read keeps the current session rather than signing the person out.
+        const session = await loadSessionContext();
+        if (session) setState({ status: "signedIn", session });
       },
     }),
     [state],

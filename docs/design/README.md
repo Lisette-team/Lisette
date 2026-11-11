@@ -328,7 +328,8 @@ b) **Soft shadows on floating elements.** v6 defines two effect styles, `Umbră/
    screen pages only `Umbră/plutitor` is applied: to the bottom navigation bars, the central "+" button and bottom
    sheets. `brand/identity.md` lists "Gradients, glows and drop shadows" under
    *What to avoid*. That list sits in §02, *Logo Direction*, so whether it also covers the interface is for the user to
-   confirm.
+   confirm. **Decided 2026-10-28 for the bottom bar and its "+" button:** use `Umbră/plutitor` as drawn. Cards and
+   bottom sheets are still undecided.
 
 c) **A dark theme only in the reader (Seara).** v6 makes Paper the only app theme. The only Night burgundy screen is
    the reading mode that ambient light switches on (S-53 Seara); evening otherwise changes only the Home header. `docs/product/screens.md` S-06 asks for an appearance

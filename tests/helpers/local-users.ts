@@ -5,7 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 
 import type { Locale } from "@/i18n";
 
-const url = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
+export const url = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
+export const anonKey = process.env.SUPABASE_ANON_KEY ?? "";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export const localSupabaseAvailable = Boolean(serviceRoleKey);
@@ -34,4 +35,17 @@ export async function createVerifiedUser(locale: Locale = "ro") {
 export async function deleteUser(id: string) {
   const { error } = await adminClient().auth.admin.deleteUser(id);
   if (error) throw error;
+}
+
+// A user who owns works cannot be deleted (retention is undecided), so fixtures remove their works,
+// manuscript versions and files first.
+export async function deleteAuthor(id: string) {
+  const admin = adminClient();
+  const { data: works } = await admin.from("works").select("id").eq("owner_id", id);
+  const workIds = (works ?? []).map((work) => work.id);
+  const { data: versions } = await admin.from("manuscript_versions").select("storage_path").in("work_id", workIds);
+  if (versions?.length) await admin.storage.from("manuscripts").remove(versions.map((v) => v.storage_path));
+  await admin.from("manuscript_versions").delete().in("work_id", workIds);
+  await admin.from("works").delete().in("id", workIds);
+  await deleteUser(id);
 }

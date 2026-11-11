@@ -28,7 +28,8 @@
     "report": "Raportează",
     "share": "Distribuie",
     "search": "Caută",
-    "change": "Schimbă"
+    "change": "Schimbă",
+    "comingSoon": "În curând. Încă lucrăm la această parte din Lisette."
   },
   "nav": {
     "home": "Acasă",
@@ -39,7 +40,8 @@
     "submissions": "Trimiteri",
     "calls": "Apeluri",
     "notifications": "Notificări",
-    "settings": "Setări"
+    "settings": "Setări",
+    "create": "Creează"
   },
   "auth": {
     "createTitle": "Creează-ți contul",
@@ -78,7 +80,8 @@
     "penNameHint": "Apare pe profilul tău de scriitor.",
     "roleDisclaimer": "Profilul de scriitor e un rol în Lisette. Nu îți verifică identitatea și nu certifică faptul că ești autorul.",
     "addWriter": "Adaugă profilul de scriitor",
-    "requestPublisher": "Cere un cont de editură"
+    "requestPublisher": "Cere un cont de editură",
+    "title": "Rolul tău"
   },
   "status": {
     "submitted": "Trimis",
@@ -112,7 +115,13 @@
     "previewReadOnly": "Doar citire. Aceasta e versiunea pe care urmează să o trimiți.",
     "useThisVersion": "Folosește această versiune",
     "chooseAnother": "Alege alta",
-    "comingSoon": "Manuscrisele tale vor apărea aici."
+    "workTitle": "Titlu",
+    "read": "Citește",
+    "versionLine": "v{{number}} · {{pages}} p. · {{date}}",
+    "unlock": "Deblochează",
+    "tooLarge": "Fișierul are peste 20 MB. Lisette acceptă manuscrise de cel mult 20 MB.",
+    "notAvailable": "Manuscrisul nu poate fi deschis.",
+    "readOnly": "Doar citire. Lisette nu editează manuscrise."
   },
   "submit": {
     "choosePublishers": "Alege editurile",

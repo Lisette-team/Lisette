@@ -32,10 +32,10 @@ const secureSessionStorage: SupportedStorage = {
 
 // Only the public anon key belongs here. The service-role key must never be
 // exposed through EXPO_PUBLIC_ variables.
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "missing-anon-key";
+export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
+export const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "missing-anon-key";
 
-export const supabase = createClient(url, anonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     // On web the SDK's own browser storage adapter is used.
     storage: Platform.OS === "web" ? undefined : secureSessionStorage,

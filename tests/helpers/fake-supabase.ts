@@ -9,6 +9,7 @@ type FakeUser = {
   password: string;
   locale: Locale;
   verified: boolean;
+  authorEnabled?: boolean;
   metadata?: Record<string, unknown>;
 };
 type Listener = (event: string, session: { user: { id: string } } | null) => void;
@@ -26,7 +27,7 @@ export function createFakeSupabase() {
   return {
     users,
     addVerifiedUser(email: string, password: string, locale: Locale = "ro") {
-      const user = { id: `user-${users.size + 1}`, email, password, locale, verified: true };
+      const user: FakeUser = { id: `user-${users.size + 1}`, email, password, locale, verified: true };
       users.set(email, user);
       return user;
     },
@@ -83,7 +84,11 @@ export function createFakeSupabase() {
     async rpc(name: string, args?: { locale?: Locale }) {
       if (!current) return { data: null, error: { code: "42501", message: "not authenticated" } };
       if (name === "get_session_context") {
-        return { data: { accountId: current.id, kind: "person", locale: current.locale, authorEnabled: false, approvalStatus: null }, error: null };
+        return { data: { accountId: current.id, kind: "person", locale: current.locale, authorEnabled: Boolean(current.authorEnabled), approvalStatus: null }, error: null };
+      }
+      if (name === "activate_author") {
+        current.authorEnabled = true;
+        return { data: null, error: null };
       }
       if (name === "set_locale" && args?.locale) {
         current.locale = args.locale;

@@ -7,7 +7,7 @@ export default function AuthLayout() {
   const pathname = usePathname();
 
   if (state.status === "loading") return null;
-  if (state.status === "signedIn") return <Redirect href="/manuscripts" />;
+  if (state.status === "signedIn") return <Redirect href="/home" />;
   // Every account screen needs a chosen language first.
   if (state.locale === null && pathname !== "/") return <Redirect href="/" />;
 

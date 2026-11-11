@@ -27,7 +27,8 @@
     "report": "Report",
     "share": "Share",
     "search": "Search",
-    "change": "Change"
+    "change": "Change",
+    "comingSoon": "Coming soon. We're still building this part of Lisette."
   },
   "nav": {
     "home": "Home",
@@ -38,7 +39,8 @@
     "submissions": "Submissions",
     "calls": "Calls",
     "notifications": "Notifications",
-    "settings": "Settings"
+    "settings": "Settings",
+    "create": "Create"
   },
   "auth": {
     "createTitle": "Create your account",
@@ -77,7 +79,8 @@
     "penNameHint": "Shown on your writer profile.",
     "roleDisclaimer": "A writer profile is a role in Lisette. It doesn't verify your identity or certify authorship.",
     "addWriter": "Add writer profile",
-    "requestPublisher": "Request a publisher account"
+    "requestPublisher": "Request a publisher account",
+    "title": "Your role"
   },
   "status": {
     "submitted": "Submitted",
@@ -110,7 +113,13 @@
     "previewReadOnly": "Read-only. This is the version you're about to send.",
     "useThisVersion": "Use this version",
     "chooseAnother": "Choose another",
-    "comingSoon": "Your manuscripts will appear here."
+    "workTitle": "Title",
+    "read": "Read",
+    "versionLine": "v{{number}} · {{pages}} p. · {{date}}",
+    "unlock": "Unlock",
+    "tooLarge": "This file is larger than 20 MB. Lisette accepts manuscripts up to 20 MB.",
+    "notAvailable": "This manuscript can't be opened.",
+    "readOnly": "Read-only. Lisette doesn't edit manuscripts."
   },
   "submit": {
     "choosePublishers": "Choose publishers",

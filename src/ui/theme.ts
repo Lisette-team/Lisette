@@ -9,6 +9,8 @@ export const colors = {
   inkMuted: "#6A5D56",
   line: "#9C8D80",
   field: "#FCF8F1",
+  surfaceMuted: "#EFE6D8",
+  shadow: "#2E1F1A24",
   onBurgundy: "#FFFFFF",
 } as const;
 

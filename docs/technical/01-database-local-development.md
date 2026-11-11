@@ -92,8 +92,28 @@ Tests create their own users and roll back, so they need no fixtures. Shared dem
 
 ## Edge Functions
 
-None exist yet. Create one with `supabase functions new <name>`; `supabase start` serves every function at `http://127.0.0.1:54321/functions/v1/<name>`. Run `supabase functions serve` instead when you want live reload and logs.
+`supabase start` serves every function in `supabase/functions/` at `http://127.0.0.1:54321/functions/v1/<name>`. Run `supabase functions serve` instead when you want live reload and logs. Create a new one with `supabase functions new <name>`.
+
+| Function | Request | Answer |
+|---|---|---|
+| `manuscript-upload` | `POST ?workId=…&label=…` with the PDF as the whole body (`Content-Type: application/pdf`); `label` optional, max 80 | `201` with the version (no storage path). `401` signed out, `403` not the work's owner, `413` over 20 MiB, `422` `{"error":"invalid_pdf"}` when the content is not a readable PDF (the name and declared type are ignored). |
+| `manuscript-file` | `POST` JSON `{versionId, submissionId?, purpose: "read" \| "download"}` | `200` PDF bytes with `Cache-Control: no-store` for the owner. `401` signed out, `403` anyone else and any `submissionId` (publisher access arrives in 02.3), `400` malformed. |
+
+Both check the caller's token themselves (`supabase/functions/_shared/caller.ts`), so `verify_jwt` is off for them in `config.toml`; that also lets the browser's CORS preflight through. The `manuscripts` bucket has no client policy: only these functions, with the service role, read or write it. A version is recorded by `record_manuscript_version`, which only the service role can execute and which checks that the uploader owns the work.
+
+From the app: ``supabase.functions.invoke(`manuscript-upload?${query}`, { body: pdfBlob })`` (see `src/features/manuscripts/api.ts`). The function reads the body once and uses that one copy to check, hash and store the file.
+
+## HTTP tests
+
+`npm run test:gateway` runs the tests in `tests/gateway/` against the running local functions. They need the local keys and are skipped without them:
+
+```bash
+eval "$(npx supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=' | sed -e 's/^/export SUPABASE_/' -e 's/"//g')"
+npm run test:gateway
+```
+
+They create their own users and delete them, with their works, versions and files, at the end. `npm test` does not run them.
 
 ## CI
 
-Every pull request to `main` runs `.github/workflows/database.yml`: it starts the full local Supabase stack (`supabase start`, every container, with `config.toml`), applies all migrations from scratch, then runs `supabase db lint --fail-on error` and `supabase test db`. Run the same three commands locally before opening a PR. Keep the CLI version in the workflow equal to the one you use locally.
+Every pull request to `main` runs `.github/workflows/database.yml`: it starts the full local Supabase stack (`supabase start`, every container, with `config.toml`), applies all migrations from scratch, then runs `supabase db lint --fail-on error`, `supabase test db` and `npm run test:gateway`. Run the same commands locally before opening a PR. Keep the CLI version in the workflow equal to the one you use locally.

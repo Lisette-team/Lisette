@@ -129,7 +129,7 @@ Privacy and ownership states are clear and quiet: who can see a manuscript, who 
 
 **Language rule:** the tagline examples below are English references. For Romanian assets use the approved tagline, "Unde editurile își găsesc autorii, iar cărțile, cititorii." See `messaging.md` for localized tagline usage.
 
-**App (React Native / Expo):** Paper background, Newsreader headings, Literata for excerpts, Inter for controls. Burgundy for primary actions. Bottom navigation with line icons. Adaptive reading themes follow the light sensor. App icon: the approved logo (`assets/VariantaLogo1.png`), simplified as needed for small sizes. Construction and background treatment remain to be tested. For Android adaptive icons, keep the mark inside the central safe zone (about 66 dp of the 108 dp canvas).
+**App (React Native / Expo):** Paper background, Newsreader headings, Literata for excerpts, Inter for controls. Burgundy for primary actions. Bottom navigation with line icons; the bar and its central "+" button carry the soft v6 shadow (decided 2026-10-28), the one interface exception so far to "no drop shadows". Adaptive reading themes follow the light sensor. App icon: the approved logo (`assets/VariantaLogo1.png`), simplified as needed for small sizes. Construction and background treatment remain to be tested. For Android adaptive icons, keep the mark inside the central safe zone (about 66 dp of the 108 dp canvas).
 
 **Website:** same system, more space for the tagline, "Writers find their way. Readers find their writers." in Newsreader, with a paired hero (writer on one side, reader on the other).
 
