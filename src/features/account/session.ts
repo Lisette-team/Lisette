@@ -40,6 +40,9 @@ type SessionContextValue = {
   signIn(email: string, password: string): Promise<Result>;
   signUp(input: { name: string; email: string; password: string }): Promise<Result>;
   resendVerification(email: string): Promise<Result>;
+  // From the email check screen: signs in with the details just used to sign up, once the email is
+  // confirmed. False while it is not confirmed yet, or when there is nothing pending.
+  signInAfterConfirmation(): Promise<boolean>;
   requestPasswordReset(email: string): Promise<Result>;
   signOut(): Promise<void>;
   // Re-reads the session context, for example after the writer profile is activated.
@@ -50,6 +53,10 @@ const LOCALE_KEY = "lisette.locale";
 const MIN_PASSWORD_LENGTH = 10;
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+
+// The sign-up details, kept in memory only (never on the device), so the person isn't asked for
+// them again after confirming their email. Lost when the app closes; cleared on sign-in or sign-out.
+let pendingSignUp: { email: string; password: string } | null = null;
 
 async function applyLocale(locale: Locale) {
   await i18n.changeLanguage(locale);
@@ -151,6 +158,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       async signIn(email, password) {
         if (!email.trim() || !password) return { error: "errors.requiredFields" };
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (!error) pendingSignUp = null;
         return { error: error ? toErrorKey(error) : null };
       },
       async signUp({ name, email, password }) {
@@ -163,11 +171,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           password,
           options: { data: { display_name: name.trim(), locale } },
         });
+        pendingSignUp = error ? null : { email: email.trim(), password };
         return { error: error ? toErrorKey(error) : null };
       },
       async resendVerification(email) {
         const { error } = await supabase.auth.resend({ type: "signup", email });
         return { error: error ? toErrorKey(error) : null };
+      },
+      async signInAfterConfirmation() {
+        const pending = pendingSignUp;
+        if (!pending) return false;
+        const { error } = await supabase.auth.signInWithPassword(pending);
+        // Anything other than "not confirmed yet" ends the wait; the person signs in normally then.
+        if (!error || error.code !== "email_not_confirmed") pendingSignUp = null;
+        return !error;
       },
       async requestPasswordReset(email) {
         if (!EMAIL_PATTERN.test(email.trim())) return { error: "errors.invalidEmail" };
@@ -175,6 +192,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return { error: error ? toErrorKey(error) : null };
       },
       async signOut() {
+        pendingSignUp = null;
         await supabase.auth.signOut();
       },
       async reload() {

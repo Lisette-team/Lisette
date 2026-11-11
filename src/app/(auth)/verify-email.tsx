@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
@@ -11,13 +11,36 @@ import { ErrorText, Screen } from "@/ui/screen";
 import { colors, fonts, space } from "@/ui/theme";
 
 const mark = require("../../../assets/brand/lisette-mark.png");
+const CONFIRMATION_CHECK_MS = 3000;
 
 export default function VerifyEmail() {
   const { t } = useTranslation();
-  const { resendVerification } = useSessionContext();
+  const { resendVerification, signInAfterConfirmation } = useSessionContext();
   const { email = "" } = useLocalSearchParams<{ email?: string }>();
   const [notice, setNotice] = useState<"sent" | "failed" | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Once the link is clicked (on any device), the next try signs in and the auth layout opens the app.
+  useEffect(() => {
+    let active = true;
+    let checking = false;
+    const timer = setInterval(() => {
+      if (checking) return;
+      checking = true;
+      signInAfterConfirmation()
+        .then((signedIn) => {
+          if (signedIn || !active) clearInterval(timer);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          checking = false;
+        });
+    }, CONFIRMATION_CHECK_MS);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [signInAfterConfirmation]);
 
   async function resend() {
     setBusy(true);
