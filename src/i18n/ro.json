@@ -10,7 +10,8 @@
   "language": {
     "ro": "Română",
     "en": "English",
-    "changeLater": "Poți schimba limba oricând din Setări."
+    "changeLater": "Poți schimba limba oricând din Setări.",
+    "choose": "Alege limba, Choose your language"
   },
   "common": {
     "continue": "Continuă",
@@ -27,7 +28,8 @@
     "report": "Raportează",
     "share": "Distribuie",
     "search": "Caută",
-    "change": "Schimbă"
+    "change": "Schimbă",
+    "comingSoon": "În curând. Încă lucrăm la această parte din Lisette."
   },
   "nav": {
     "home": "Acasă",
@@ -38,7 +40,8 @@
     "submissions": "Trimiteri",
     "calls": "Apeluri",
     "notifications": "Notificări",
-    "settings": "Setări"
+    "settings": "Setări",
+    "create": "Creează"
   },
   "auth": {
     "createTitle": "Creează-ți contul",
@@ -57,7 +60,15 @@
     "verifyExpiry": "Linkul e valabil 24 de ore.",
     "openEmailApp": "Deschide aplicația de email",
     "resendLink": "Trimite din nou linkul",
-    "changeEmail": "Schimbă adresa de email"
+    "changeEmail": "Schimbă adresa de email",
+    "noAccount": "Nu am cont",
+    "signOut": "Ieși din cont",
+    "linkSent": "Am trimis un link",
+    "recoverTitle": "Resetează-ți parola",
+    "recoverBody": "Scrie adresa de email și îți trimitem un link pentru o parolă nouă.",
+    "sendLink": "Trimite linkul",
+    "recoverySent": "Dacă există un cont pentru {{email}}, i-am trimis un link pentru o parolă nouă.",
+    "resent": "Am trimis din nou linkul."
   },
   "roles": {
     "writerTitle": "Adaugă un profil de scriitor",
@@ -69,7 +80,8 @@
     "penNameHint": "Apare pe profilul tău de scriitor.",
     "roleDisclaimer": "Profilul de scriitor e un rol în Lisette. Nu îți verifică identitatea și nu certifică faptul că ești autorul.",
     "addWriter": "Adaugă profilul de scriitor",
-    "requestPublisher": "Cere un cont de editură"
+    "requestPublisher": "Cere un cont de editură",
+    "title": "Rolul tău"
   },
   "status": {
     "submitted": "Trimis",
@@ -102,7 +114,14 @@
     "deviceAuthHint": "Folosește amprenta sau PIN-ul telefonului.",
     "previewReadOnly": "Doar citire. Aceasta e versiunea pe care urmează să o trimiți.",
     "useThisVersion": "Folosește această versiune",
-    "chooseAnother": "Alege alta"
+    "chooseAnother": "Alege alta",
+    "workTitle": "Titlu",
+    "read": "Citește",
+    "versionLine": "v{{number}} · {{pages}} p. · {{date}}",
+    "unlock": "Deblochează",
+    "tooLarge": "Fișierul are peste 20 MB. Lisette acceptă manuscrise de cel mult 20 MB.",
+    "notAvailable": "Manuscrisul nu poate fi deschis.",
+    "readOnly": "Doar citire. Lisette nu editează manuscrise."
   },
   "submit": {
     "choosePublishers": "Alege editurile",
@@ -311,6 +330,12 @@
     "uploadUnknown": "Nu am putut confirma încărcarea. Verifică-ți manuscrisele înainte să încerci din nou.",
     "sendFailed": "Trimiterea nu a plecat. Manuscrisul salvat e în continuare disponibil. Încearcă să-l trimiți din nou.",
     "permissionCamera": "Lisette are nevoie de cameră ca să scaneze coduri de bare. Poți adăuga cărțile și manual.",
-    "permissionLocation": "Lisette are nevoie o singură dată de locația ta ca să deblocheze o descoperire. Poți explora harta și fără ea."
+    "permissionLocation": "Lisette are nevoie o singură dată de locația ta ca să deblocheze o descoperire. Poți explora harta și fără ea.",
+    "invalidCredentials": "Emailul sau parola nu sunt corecte.",
+    "emailNotConfirmed": "Confirmă-ți întâi emailul. Caută linkul în căsuța de email.",
+    "passwordTooShort": "Parola trebuie să aibă cel puțin 10 caractere.",
+    "requiredFields": "Completează toate câmpurile.",
+    "invalidEmail": "Adresa de email nu pare corectă.",
+    "emailTaken": "Există deja un cont cu acest email. Încearcă să intri în cont."
   }
 }

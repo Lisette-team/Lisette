@@ -66,6 +66,12 @@ logo:
   production_files: pending
   references:
     - assets/VariantaLogo2.png
+  launch_animation:
+    status: approved
+    approved_on: 2026-10-24
+    file: ../assets/brand/lisette-splash.mp4
+    description: flat Paper and Gold L drawn on Night burgundy, pages fan out, then the "Lisette" wordmark; about 3 s, silent
+    use: phone app launch only, not web; skipped when the device asks for reduced motion
 taglines:
   ro: "Unde editurile își găsesc autorii, iar cărțile, cititorii."
   en: "Writers find their way. Readers find their writers."

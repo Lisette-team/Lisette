@@ -15,7 +15,7 @@
 ## Authority and status
 The user's latest explicit decisions take precedence. For settled values and exact approved wording use `brand.yaml`; for confirmed product policies use `../docs/product/requirements.md`. The specialist guides explain their application. Earlier options and PNG proposals cannot override approved decisions. Resolve a substantive unresolved conflict with the user rather than inventing a new approval.
 
-Base palette is approved from `assets/ColorPaletteProposition.png`. Its illustrative badge suggestions do not override the gentle-milestone policy. The approved logo is `assets/VariantaLogo1.png` (2026-10-18); `assets/VariantaLogo2.png` remains an earlier exploration. Vector production files are still to be made.
+Base palette is approved from `assets/ColorPaletteProposition.png`. Its illustrative badge suggestions do not override the gentle-milestone policy. The approved logo is `assets/VariantaLogo1.png` (2026-10-18); `assets/VariantaLogo2.png` remains an earlier exploration. Vector production files are still to be made. The launch animation `../assets/brand/lisette-splash.mp4` is approved (2026-10-24) for the phone app's opening only; see `identity.md`.
 
 ## Remaining decisions
 - Logo production files (vector master, small-size, monochrome, dark-mode and app-icon versions).
