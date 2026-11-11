@@ -111,6 +111,22 @@ describe("language_persists_and_private_routes_redirect", () => {
     });
   });
 
+  test("confirming the email signs in from the email check screen, without typing the password again", async () => {
+    mockDeviceStorage.set("lisette.locale", "ro");
+    const app = await startApp("/create-account");
+
+    await fireEvent.changeText(await screen.findByLabelText("Nume"), "Ioana Mareș");
+    await fireEvent.changeText(screen.getByLabelText("Email"), "ioana@example.test");
+    await fireEvent.changeText(screen.getByLabelText("Parolă"), "o-parola-lunga");
+    await fireEvent.press(screen.getByRole("button", { name: "Creează contul" }));
+    expect(await screen.findByText(/ioana@example\.test/)).toBeOnTheScreen();
+
+    // The person clicks the link in the email, on this device or another one.
+    mockSupabase.users.get("ioana@example.test")!.verified = true;
+
+    await waitFor(() => expect(app.getPathname()).toBe("/home"), { timeout: 5000 });
+  });
+
   test("a password shorter than 10 characters is rejected before sending", async () => {
     mockDeviceStorage.set("lisette.locale", "ro");
     const app = await startApp("/create-account");

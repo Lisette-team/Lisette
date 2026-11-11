@@ -3,13 +3,15 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet } from "react-native";
 
 import { useSession } from "@/features/account/session";
-import { Icon } from "@/ui/icon";
-import { colors, radius } from "@/ui/theme";
+import { Avatar } from "@/ui/avatar";
+import { radius } from "@/ui/theme";
 
 // Writers have Manuscripts where Profile was in the menu, so they reach Profile from the screen header.
-export function ProfileButton() {
+// `always` shows it to readers too, as in Home's top bar.
+export function ProfileButton({ always = false, size = 48 }: { always?: boolean; size?: number }) {
   const { t } = useTranslation();
-  if (!useSession()?.authorEnabled) return null;
+  const session = useSession();
+  if (!session || (!session.authorEnabled && !always)) return null;
 
   return (
     <Pressable
@@ -17,20 +19,16 @@ export function ProfileButton() {
       accessibilityLabel={t("nav.profile")}
       hitSlop={4}
       onPress={() => router.push("/profile")}
-      style={styles.button}
+      style={[styles.button, { width: size, height: size }]}
     >
-      <Icon name="user" color={colors.ink} />
+      <Avatar id={session.userId} size={size} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    width: 48,
-    height: 48,
     borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceMuted,
+    overflow: "hidden",
   },
 });

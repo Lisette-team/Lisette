@@ -4,17 +4,25 @@ on:
   pull_request:
     branches: [main]
 
+# A new push to the same pull request replaces its older run, including one stuck in the queue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A normal run takes about 3 minutes; stop a stuck one instead of letting it hang.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
           version: 2.121.0
-      # Starts every Supabase container (Postgres, Auth, Storage, Edge Functions...) with config.toml
-      # and applies every migration from scratch: the clean rebuild check.
-      - run: supabase start
+      # Starts the containers the tests use (Postgres, Auth, Storage, REST, Edge Functions and the API
+      # gateway) with config.toml and applies every migration from scratch: the clean rebuild check.
+      # Dashboard, realtime, mail, image and logging containers are not needed and slow the start.
+      - run: supabase start -x studio,postgres-meta,realtime,mailpit,imgproxy,logflare,vector,supavisor
       - run: supabase db lint --fail-on error
       - run: supabase test db
       # HTTP tests against the running Edge Functions, with the local stack's keys.

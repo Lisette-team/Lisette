@@ -8,7 +8,7 @@ Status: **proposal for review.** Derives screens and their appearance from `requ
 - Light mode: Paper `#F6EFE3` surfaces, Ink `#2E1F1A` text, Burgundy `#7A2233` primary buttons with Paper labels. Dark mode: Night burgundy `#3A121C` surfaces, Paper text, Gold `#C99A4E` primary buttons with Ink labels.
 - Gold is a small accent only; never Gold text or Gold-only icons/borders on Paper. Never Burgundy text or Burgundy-only controls on Night burgundy.
 - Type: Newsreader for headings, Literata for anything people read (excerpts, manuscripts, bios), Inter for controls, labels, navigation and data. Sentence case, no all-caps.
-- Rounded line icons, about 1.5–2 px at 24 px. Empty states use a flat single-colour illustration in the palette, no faces.
+- Rounded line icons, about 1.5–2 px at 24 px. Empty states use the approved mascot or a flat illustration in the palette (mascot approved 2026-11-11, `brand/identity.md` §06).
 - No gradients, glows, drop shadows, pure white or pure black.
 - Status, privacy and error states always pair colour with text and an icon.
 
@@ -19,7 +19,7 @@ Status: **proposal for review.** Derives screens and their appearance from `requ
 - Never say or imply paying authors, getting published, or that manuscripts are safe from copying. State only confirmed save/upload/send status; if unknown, say so and point to My manuscripts or submission status.
 - Say "writers, readers, publishers", not "users" or "creators". The app is "Lisette".
 - Privacy cues (who can see this) appear wherever content is shared: a lock icon plus a plain sentence.
-- Reaction labels/icons are **Open**; use placeholders, not working labels as copy.
+- Reactions (2026-11-11): a React button opens a panel right above it with the three reaction faces of the bookmark mascot (`docs/design/assets/illustrations/reactie-imi-place.svg`, `reactie-ok.svg`, `reactie-nu-imi-place.svg`). Tap a face, or press React and slide the finger over the faces and lift on one, as on Facebook. Picking your current reaction again takes it back. A summary line shows the faces received and their total. The names in the app ("Îmi place mult", "A fost ok", "Nu mi-a plăcut") are working names chosen for testing; final names are still **Open**.
 
 **Layout**
 - Android phone first; tablets get list/detail (two-pane) layouts; web gets a wider workspace for manuscript management and publisher review (section 5).

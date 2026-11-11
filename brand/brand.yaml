@@ -17,8 +17,8 @@ links:
   domain: ""
   repo: ""
 created: 2026-10-13
-updated: 2026-10-21
-version: 4
+updated: 2026-11-11
+version: 5
 artifacts:
   context: true
   naming: true
@@ -87,6 +87,13 @@ audience_priority:
   status: approved
   equal_participants: [writers, readers, publishers]
   initial_recruitment: debut_writers
+illustration:
+  status: approved
+  approved_on: 2026-11-11
+  mascot: the v6 bookmark mascot "Semnul", with a face (eyes, cheeks, smile), weave, stitching, tassel and accessories
+  assets: ../docs/design/assets/illustrations/semn-*.svg (empty states, moments) and semn-avatar-*.svg (default avatars)
+  home_headers: ../docs/design/assets/illustrations/antet-*.svg (morning, midday, evening street with a bookshop)
+  note: replaces the earlier "no faces" rule; other illustration stays flat and in the palette
 publisher_kinds:
   status: approved
   approved_on: 2026-10-21

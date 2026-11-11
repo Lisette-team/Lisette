@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: space.sm,
+    paddingTop: space.md + 4,
     paddingHorizontal: space.xs,
     backgroundColor: colors.field,
     borderTopLeftRadius: 20,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     boxShadow: `0px 10px 28px ${colors.shadow}`,
   },
   tab: { flex: 1, minHeight: 56, alignItems: "center", justifyContent: "center", gap: space.xs },
-  sparkles: { position: "absolute", left: -20, top: -20 },
+  sparkles: { position: "absolute", left: -20, top: -14 },
   label: { fontFamily: fonts.uiMedium, fontSize: 11, lineHeight: 13 },
   create: {
     width: 56,
