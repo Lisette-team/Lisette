@@ -13,8 +13,8 @@
   sample data (for example "Ioana Mareș", "Editura Malul de Argint"). Reviewed interface copy is still pending.
 - Do **not** take functionality from them. A control drawn in a screen is not a confirmed feature, and a missing
   control is not a removed one. Check `docs/product/requirements.md` and `docs/product/screens.md`.
-- Do not treat the extra colours in `tokens.json` as approved palette entries. Do not adopt the mascot, the shadows or
-  the dark-theme scope until the points under "Proposed, not decided" are decided.
+- Do not treat the extra colours in `tokens.json` as approved palette entries. Do not adopt the remaining shadows or
+  the dark-theme scope until the points under "Proposed, not decided" are decided (the mascot is approved, see a).
 - A screen showing a lock, a fingerprint prompt or an upload record designs a protection state. It is not evidence
   that the protection exists, and device or upload verification is never proof of authorship.
 
@@ -221,7 +221,8 @@ screens.
 | `assets/illustrations/semn-lupa.svg` | Mascot with a magnifier: ISBN scan, search |
 | `assets/illustrations/semn-salut.svg` | Bookmark mascot, waving: onboarding, welcome |
 | `assets/illustrations/semn-scrie.svg` | Mascot writing: manuscripts, new post |
-| `assets/icons/*.svg` (51) | Line icons, 24×24, 1.75 px stroke, `stroke="currentColor"`: the minimalist D set (`lib.ICONS`) plus `rd_comps.EXTRA` (`glob`, `luna`, `soare`, `mai-mult`, `carte`, `stampila`). `star-fill` is the filled rating star. |
+| `assets/illustrations/reactie-imi-place.svg`, `reactie-ok.svg`, `reactie-nu-imi-place.svg` | Added 2026-11-11, not from v6: the mascot's three reaction faces (heart eyes, neutral, frown with a tear), 48×48, used in the reaction panel and summary. |
+| `assets/icons/*.svg` (55) | Line icons, 24×24, 1.75 px stroke, `stroke="currentColor"`: the minimalist D set (`lib.ICONS`) plus `rd_comps.EXTRA` (`glob`, `luna`, `soare`, `mai-mult`, `carte`, `stampila`). `star-fill` is the filled rating star. `reaction-love`, `reaction-okay` and `reaction-dislike` (added 2026-11-11, not from v6) are the bookmark mascot's smile, neutral and frown, used for the three reactions. `repost` (added 2026-11-11, not from v6) is the two-arrow loop for resharing inside Lisette, kept apart from `share` (sharing outside the app). |
 | `assets/reference/book-cover-card-variants.png` | The generated book cover in the book card: 4 cover colours × 3 visibility chips. **Reference only, not a production asset.** |
 | `assets/reference/four-point-star-sizes.png` | The four-point star from the logo at 8, 12, 18 and 26 px. **Reference only.** Vector logo production files are still pending in `brand/`. |
 
@@ -321,8 +322,9 @@ Each v6 choice below contradicts an approved document. Agents follow the approve
 otherwise.
 
 a) **A mascot with a face.** The bookmark mascot (the `semn-*` illustrations, avatars and empty states) has eyes,
-   cheeks, a smile and details such as weave, stitching, a tassel and accessories. `brand/identity.md` §06,
-   *Illustration*, asks for "simple, flat, single-colour shapes" and "No faces".
+   cheeks, a smile and details such as weave, stitching, a tassel and accessories. **Decided 2026-11-11:** the
+   mascot is approved as drawn, for empty states, moments and default avatars; `brand/identity.md` §06 and
+   `brand/brand.yaml` (`illustration`) are updated.
 
 b) **Soft shadows on floating elements.** v6 defines two effect styles, `Umbră/card` and `Umbră/plutitor`. On the
    screen pages only `Umbră/plutitor` is applied: to the bottom navigation bars, the central "+" button and bottom

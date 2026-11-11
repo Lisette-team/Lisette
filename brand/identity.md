@@ -107,7 +107,7 @@ For the demo and the competition, real photos of the team and testers reading be
 
 **Personality:** functional first, with small touches of warmth (a rounded bookmark, a soft spine on the shelf icon). Not expressive or cartoonish.
 
-**Illustration:** light. Use simple, flat, single-colour shapes in the palette for empty states and onboarding, for example an empty shelf, a manuscript in an envelope, a reader with a book. No faces, so it stays inclusive and easy to produce.
+**Illustration:** light. Use simple, flat shapes in the palette for empty states and onboarding, for example an empty shelf, a manuscript in an envelope, a reader with a book. **Mascot (approved 2026-11-11):** the v6 bookmark mascot, Semnul, may have a face and appears in empty states, quiet moments and default avatars (`docs/design/assets/illustrations/semn-*.svg`). It stays gentle and never makes a joke of errors, rejection or privacy. The Home header uses the v6 street illustrations (`antet-*.svg`).
 
 **Custom icons worth drawing:** shelf, manuscript with a lock (privacy), envelope with a status check.
 
