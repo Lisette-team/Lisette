@@ -100,9 +100,10 @@ export default function AddBook() {
   }
 
   async function save() {
-    if (book) {
+    const scanned = params.workId;
+    if (scanned) {
       await attempt(async () => {
-        await saveBook(book.id, shelf);
+        await saveBook(scanned, shelf);
         done();
       });
       return;

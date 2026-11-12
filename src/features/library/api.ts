@@ -87,14 +87,17 @@ export async function getBook(id: string): Promise<Book | null> {
 // Scanner: cache first, then Open Library, through the isbn-lookup Edge Function. Any failure on the
 // way (offline, timeout, server error) is "unavailable", so the person can still add the book by hand.
 export async function lookupIsbn(isbn: string): Promise<IsbnLookup> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const call = supabase.functions.invoke("isbn-lookup", { body: { isbn } });
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), LOOKUP_TIMEOUT_MS));
+    const timeout = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), LOOKUP_TIMEOUT_MS)));
     const result = await Promise.race([call, timeout]);
     if (!result || result.error || !result.data?.status) return { status: "unavailable" };
     return result.data as IsbnLookup;
   } catch {
     return { status: "unavailable" };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
