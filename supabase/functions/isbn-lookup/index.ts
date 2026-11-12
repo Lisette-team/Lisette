@@ -17,7 +17,10 @@ Deno.serve(async (req) => {
   if (typeof isbn !== "string" || !isIsbn13(isbn)) return json(400, { error: "bad_request" });
 
   const cached = await who.db.rpc("lookup_isbn", { isbn });
-  if (cached.error) return json(200, { status: "unavailable" });
+  if (cached.error) {
+    console.error("isbn-lookup: lookup_isbn failed", cached.error);
+    return json(200, { status: "unavailable" });
+  }
   if (cached.data) return json(200, { status: "found", work: cached.data });
 
   // OPEN_LIBRARY_URL lets a local stack point at a stand-in server; production uses openlibrary.org.
@@ -31,6 +34,11 @@ Deno.serve(async (req) => {
     publisher_name: result.book.publisherName,
     external_id: result.book.externalId,
   });
-  if (error || !work) return json(200, { status: "unavailable" });
+  if (error) {
+    console.error("isbn-lookup: cache_isbn_work failed", error);
+    return json(200, { status: "unavailable" });
+  }
+  // Null when the ISBN belongs to a work the caller may not see: say nothing about it.
+  if (!work) return json(200, { status: "unavailable" });
   return json(200, { status: "found", work });
 });

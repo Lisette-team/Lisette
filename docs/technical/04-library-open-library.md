@@ -22,3 +22,16 @@ Sources: https://openlibrary.org/developers/api and https://openlibrary.org/dev/
 - The answer is `found` (with the book), `not_found` or `unavailable` (timeout, network or server error). `not_found` and `unavailable` create nothing. The app then opens manual add with the ISBN filled in and an empty title.
 - `OPEN_LIBRARY_URL` can point the function at a stand-in server. It is not set normally.
 - Tests never call the live API. The parser and client are tested with recorded answers in `tests/fixtures/open-library-search-*.json`, which were recorded once by hand on 2026-11-12, and with fake fetches (timeout, 503, network down). The gateway test only uses cached ISBNs and refused requests.
+
+## Typed ISBNs on manual add (fix round 1, 2026-11-12)
+
+- A valid ISBN typed on manual add, or filled in after a scan, goes through `isbn-lookup` first, as a scan does.
+  - `found`: the "Is this the book?" sheet offers that book next to similar titles.
+  - `not_found`: Open Library has no record, so a new book may keep the ISBN.
+  - `unavailable`: the new book is created **without** the ISBN, so the slot stays free for a verified lookup later. The library then says "Book saved without its ISBN, because we couldn't check it right now."
+- This rule lives in the app. `create_catalogue_work` still accepts an ISBN, so a client calling the RPC directly could claim an ISBN without a lookup. Enforcing it in the database would need a record of the ISBNs the server has seen as not found: a new table, which is a schema change for the team to agree on.
+- `cache_isbn_work` returns null when the row holding the ISBN is not public. The function then answers `unavailable`, and the service role never hands a private work back to the caller.
+
+## Known gaps
+
+- There is no per-user throttle on `isbn-lookup` or `create_catalogue_work`. A signed-in account could send many lookups, which share Lisette's Open Library limit, or create many catalogue books.

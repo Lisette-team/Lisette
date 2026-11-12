@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(39);
 
 -- Ana is an author, Bogdan a reader, Revista Test a publisher, Dana a reader Bogdan will block.
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -20,6 +20,10 @@ insert into public.follows (follower_id, followed_id) values
 create temp table ids (name text primary key, id uuid) on commit drop;
 grant select, insert on ids to anon, authenticated, service_role;
 
+-- An author's private project that happens to carry an ISBN.
+insert into public.works (title, source, owner_id, isbn) values
+  ('Proiect cu ISBN', 'author', '11111111-1111-1111-1111-111111111111', '9786069999127');
+
 -- The ISBN Edge Function caches an Open Library answer with the service role.
 set local role service_role;
 insert into ids select 'scanned', (public.cache_isbn_work('9780140328721', 'Fantastic Mr Fox',
@@ -28,6 +32,10 @@ select is(
   (public.cache_isbn_work('9780140328721', 'Another title', array['Someone'], null, null) ->> 'id')::uuid,
   (select id from ids where name = 'scanned'),
   'caching the same ISBN again returns the existing book and changes nothing'
+);
+select is(
+  public.cache_isbn_work('9786069999127', 'Leaked title', array['Someone'], null, null), null,
+  'the cache never hands back a private work that already holds the ISBN'
 );
 reset role;
 
@@ -92,7 +100,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ select public.set_entry_public('aaaaaaaa-0000-0000-0000-000000000002', true) $$,
-  '22023', null, 'set_entry_public needs the book to be in the caller''s library'
+  'P0002', null, 'set_entry_public needs the book to be in the caller''s library'
 );
 select throws_ok(
   $$ select public.set_inspiration((select id from ids where name = 'scanned'), true) $$,
@@ -103,14 +111,42 @@ select lives_ok(
   'clearing the mark needs no author profile'
 );
 
--- Bogdan blocks Dana.
+select throws_ok(
+  $$ select public.set_inspiration('aaaaaaaa-0000-0000-0000-000000000002', false) $$,
+  'P0002', null, 'set_inspiration needs the book to be in the caller''s library'
+);
+
+-- Dana shares the same book publicly, then Bogdan blocks Dana.
+set local request.jwt.claims to '{"sub": "44444444-4444-4444-4444-444444444444", "role": "authenticated"}';
+select public.save_book((select id from ids where name = 'scanned'), 'to_read');
+select public.set_entry_public((select id from ids where name = 'scanned'), true);
+set local request.jwt.claims to '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
 select public.set_block('44444444-4444-4444-4444-444444444444', true);
+
+-- Blocking removes the follows; put them back so only the block can hide the entries below.
+reset role;
+insert into public.follows (follower_id, followed_id) values
+  ('44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222'),
+  ('22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444');
+set local role authenticated;
+set local request.jwt.claims to '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
+
+-- The blocker does not see the blocked account's public entry either.
+select is(
+  (select count(*)::int from public.library_entries where user_id = '44444444-4444-4444-4444-444444444444'), 0,
+  'the blocker does not see a public entry of the account they blocked'
+);
+select is((select count(*)::int from public.followed_library()), 0, 'nor in the followed strip, even with a follow row');
 
 -- Ana follows Bogdan and sees his public entry, in the table and in the followed strip.
 set local request.jwt.claims to '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
 select is(
   (select count(*)::int from public.library_entries where user_id = '22222222-2222-2222-2222-222222222222'), 1,
   'a public entry is visible to others'
+);
+select is(
+  (select count(*)::int from public.library_entries where user_id = '44444444-4444-4444-4444-444444444444'), 1,
+  'a block between two other accounts hides nothing from a third'
 );
 select results_eq(
   $$ select f ->> 'name', f ->> 'title', f ->> 'shelf' from public.followed_library() f $$,
@@ -183,7 +219,7 @@ select is(
 );
 select throws_ok(
   $$ select public.remove_book((select id from ids where name = 'scanned')) $$,
-  '22023', null, 'removing a book that is not in the library is reported'
+  'P0002', null, 'removing a book that is not in the library is reported'
 );
 
 -- Publisher accounts have no personal library.

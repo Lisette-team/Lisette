@@ -53,7 +53,8 @@ language sql stable set search_path = '' as $$
 $$;
 
 -- Service role only (the isbn-lookup Edge Function): caches one Open Library answer. The first answer
--- wins; an ISBN already on Lisette is returned unchanged, never overwritten or merged.
+-- wins; an ISBN already on Lisette is returned unchanged, never overwritten or merged. Null when the
+-- row holding the ISBN is not public, so the service role never hands a private work to the caller.
 create function public.cache_isbn_work(isbn text, title text, author_names text[], publisher_name text,
   external_id text) returns jsonb
 language plpgsql security definer set search_path = '' as $$
@@ -66,7 +67,7 @@ begin
           nullif(btrim(cache_isbn_work.publisher_name), ''), clean, cache_isbn_work.external_id,
           'isbn_lookup', 'public', true)
   on conflict on constraint works_isbn_key do nothing;
-  return (select public.work_card(w) from public.works w where w.isbn = clean);
+  return (select public.work_card(w) from public.works w where w.isbn = clean and w.visibility = 'public');
 end;
 $$;
 revoke execute on function public.cache_isbn_work(text, text, text[], text, text) from public, anon, authenticated;
@@ -122,34 +123,37 @@ begin
 end;
 $$;
 
+-- "Not in your library" is P0002 in the functions below; 22023 means the change itself is refused.
+
 -- Only an entry for a public work can be shown on the profile, so a private title never leaks.
 create function public.set_entry_public(work_id uuid, public boolean) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
+  if not exists (select 1 from public.library_entries e
+                 where e.user_id = auth.uid() and e.work_id = set_entry_public.work_id) then
+    raise exception 'this book is not in your library' using errcode = 'P0002';
+  end if;
   if set_entry_public.public and not exists (
     select 1 from public.works w where w.id = set_entry_public.work_id and w.visibility = 'public') then
     raise exception 'only an entry for a public book can be shown' using errcode = '22023';
   end if;
   update public.library_entries e set is_public = set_entry_public.public
   where e.user_id = auth.uid() and e.work_id = set_entry_public.work_id;
-  if not found then
-    raise exception 'this book is not in your library' using errcode = '22023';
-  end if;
 end;
 $$;
 
 -- Author accounts only. Marking does not publish the entry; the profile's Inspirations section (03.2) decides what to show.
-create function public.set_inspiration(work_id uuid, "on" boolean) returns void
+create function public.set_inspiration(work_id uuid, is_on boolean) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if set_inspiration."on" and not exists (
+  if set_inspiration.is_on and not exists (
     select 1 from public.profiles p where p.id = auth.uid() and p.author_enabled) then
     raise exception 'only an author marks inspirations' using errcode = '42501';
   end if;
-  update public.library_entries e set is_inspiration = set_inspiration."on"
+  update public.library_entries e set is_inspiration = set_inspiration.is_on
   where e.user_id = auth.uid() and e.work_id = set_inspiration.work_id;
   if not found then
-    raise exception 'this book is not in your library' using errcode = '22023';
+    raise exception 'this book is not in your library' using errcode = 'P0002';
   end if;
 end;
 $$;
@@ -160,7 +164,7 @@ language plpgsql security definer set search_path = '' as $$
 begin
   delete from public.library_entries e where e.user_id = auth.uid() and e.work_id = remove_book.work_id;
   if not found then
-    raise exception 'this book is not in your library' using errcode = '22023';
+    raise exception 'this book is not in your library' using errcode = 'P0002';
   end if;
 end;
 $$;
