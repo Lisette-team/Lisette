@@ -386,7 +386,13 @@
     "removeTitle": "Remove this book from your library?",
     "removeBody": "The book stays on Lisette. Only your entry goes.",
     "removeYes": "Yes, remove",
-    "privateWork": "A private project can't appear on your profile."
+    "privateWork": "A private project can't appear on your profile.",
+    "notInLibrary": "This book is no longer in your library.",
+    "savedWithoutIsbn": "Book saved without its ISBN, because we couldn't check it right now.",
+    "readSummary_one": "{{count}} book in {{year}}, the last on {{date}}",
+    "readSummary_other": "{{count}} books in {{year}}, the last on {{date}}",
+    "readSummaryNone": "None finished yet in {{year}}",
+    "readCardLabel": "Read. {{summary}}"
   },
   "reviews": {
     "rate": "Your rating",

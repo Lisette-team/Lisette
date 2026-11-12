@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ProfileButton } from "@/features/account/profile-button";
@@ -33,12 +33,26 @@ const READING = require("../../../../assets/illustrations/semn-citeste.svg");
 // Scanning needs the phone camera; on the web, books are added by hand (v6 S-60 web).
 const canScan = Platform.OS !== "web";
 
+// From this width the library uses the two-column layout of v6 S-60 web.
+const WIDE = 960;
+
+// Books on the Read shelf moved there this year, and the latest. updated_at is the closest record of
+// when a book was finished: it also changes when the entry is edited later.
+function readSummary(entries: LibraryEntry[]) {
+  const read = entries.filter((e) => e.shelf === "read");
+  if (!read.length) return null;
+  const year = new Date().getFullYear();
+  const thisYear = read.filter((e) => new Date(e.updatedAt).getFullYear() === year);
+  const last = thisYear.reduce((latest, e) => (e.updatedAt > latest ? e.updatedAt : latest), "");
+  return { year, count: thisYear.length, last };
+}
+
 // S-60: the three shelves, private by default, with a per-book public switch.
 export default function Library() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const session = useSession();
   const userId = session?.userId ?? "";
-  const params = useLocalSearchParams<{ shelf?: string }>();
+  const params = useLocalSearchParams<{ shelf?: string; saved?: string }>();
   const [shelf, setShelf] = useState<Shelf>(
     SHELVES.includes(params.shelf as Shelf) ? (params.shelf as Shelf) : "to_read",
   );
@@ -47,12 +61,17 @@ export default function Library() {
   const [open, setOpen] = useState<LibraryEntry | null>(null);
   const [removing, setRemoving] = useState<LibraryEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Errors from the entry sheet are shown inside it, next to the control that was refused.
+  const [sheetError, setSheetError] = useState<string | null>(null);
+  const { width } = useWindowDimensions();
+  const wide = width >= WIDE;
 
   // Reloaded on every visit, so a book added from the scanner shows up when coming back.
   useFocusEffect(
     useCallback(() => {
       let active = true;
       if (SHELVES.includes(params.shelf as Shelf)) setShelf(params.shelf as Shelf);
+      const failed = () => active && setError(t("errors.network"));
       if (userId) {
         myLibrary(userId)
           .then((list) => {
@@ -60,11 +79,11 @@ export default function Library() {
             setEntries(list);
             setError(null);
           })
-          .catch(() => active && setError(t("errors.network")));
+          .catch(failed);
       }
       followedLibrary()
         .then((list) => active && setFollowed(list))
-        .catch(() => undefined);
+        .catch(failed);
       return () => {
         active = false;
       };
@@ -76,13 +95,19 @@ export default function Library() {
     setOpen((current) => (current?.workId === workId ? { ...current, ...patch } : current));
   };
 
-  async function run(action: () => Promise<void>, onDone: () => void, refused = "errors.generic") {
+  // P0002: the entry is gone (removed elsewhere); 22023: the change itself is refused.
+  function message(e: unknown, refused: string) {
+    const code = (e as { code?: string } | null)?.code;
+    return t(code === "P0002" ? "library.notInLibrary" : code === "22023" ? refused : "errors.generic");
+  }
+
+  async function runInSheet(action: () => Promise<void>, onDone: () => void, refused = "errors.generic") {
+    setSheetError(null);
     try {
       await action();
       onDone();
-      setError(null);
     } catch (e) {
-      setError(t((e as { code?: string })?.code === "22023" ? refused : "errors.generic"));
+      setSheetError(message(e, refused));
     }
   }
 
@@ -90,160 +115,239 @@ export default function Library() {
     const entry = removing;
     setRemoving(null);
     if (!entry) return;
-    await run(
-      () => removeBook(entry.workId),
-      () => setEntries((list) => list?.filter((e) => e.workId !== entry.workId) ?? null),
-    );
+    try {
+      await removeBook(entry.workId);
+      setEntries((list) => list?.filter((e) => e.workId !== entry.workId) ?? null);
+      setError(null);
+    } catch (e) {
+      setError(message(e, "errors.generic"));
+    }
   }
 
   const onShelf = entries?.filter((e) => e.shelf === shelf) ?? [];
+  const read = readSummary(entries ?? []);
+  const summary = read
+    ? read.count
+      ? t("library.readSummary", {
+          count: read.count,
+          year: read.year,
+          date: new Date(read.last).toLocaleDateString(i18n.language, { day: "numeric", month: "long" }),
+        })
+      : t("library.readSummaryNone", { year: read.year })
+    : null;
+
+  const header = (
+    <View style={styles.header}>
+      <Text accessibilityRole="header" style={styles.title}>
+        {t("library.myLibrary")}
+      </Text>
+      <ProfileButton always size={44} />
+    </View>
+  );
+
+  const addActions = canScan ? (
+    <View style={styles.scanCard}>
+      <Image source={MAGNIFIER} style={styles.scanArt} contentFit="contain" accessibilityIgnoresInvertColors />
+      <View style={styles.scanBody}>
+        <Text style={styles.scanTitle}>
+          {t("library.scanCardTitle")} <Text style={styles.scanAccent}>{t("library.scanCardAccent")}</Text>
+        </Text>
+        <Text style={styles.muted}>{t("library.scanCardHint")}</Text>
+        <View style={styles.scanActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("library.scan")}
+            onPress={() => router.push("/book/scan")}
+            style={styles.scanButton}
+          >
+            <Text style={styles.scanButtonLabel}>{t("library.scanShort")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("library.addByHand")}
+            onPress={() => router.push("/book/add")}
+            style={styles.byHand}
+          >
+            <Text style={styles.byHandLabel}>{t("library.byHand")}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  ) : (
+    <Button label={t("library.addByHand")} variant="secondary" onPress={() => router.push("/book/add")} />
+  );
+
+  const notices = (
+    <>
+      {params.saved === "withoutIsbn" ? (
+        <View style={styles.notice}>
+          <Icon name="alert" color={colors.burgundy} size={20} />
+          <Text style={styles.noticeText}>{t("library.savedWithoutIsbn")}</Text>
+        </View>
+      ) : null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
+    </>
+  );
+
+  // v6 S-60: the Read shelf as a record (count this year and the last one finished), not a score.
+  const readCard =
+    read && summary ? (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("library.readCardLabel", { summary })}
+        onPress={() => setShelf("read")}
+        style={styles.readCard}
+      >
+        <View style={styles.readSpines}>
+          <View style={[styles.readSpine, styles.spineInk]} />
+          <View style={[styles.readSpine, styles.spineGold]} />
+          <View style={[styles.readSpine, styles.spineBurgundy]} />
+          <View style={[styles.readSpine, styles.spinePale]} />
+        </View>
+        <View style={styles.readText}>
+          <Text style={styles.readTitle}>{t("library.read")}</Text>
+          <Text style={styles.muted}>{summary}</Text>
+        </View>
+        <Icon name="chevronRight" color={colors.ink} size={22} />
+      </Pressable>
+    ) : null;
+
+  const shelfContent = (
+    <>
+      <ShelfChips value={shelf} onChange={setShelf} />
+
+      {entries && onShelf.length === 0 ? (
+        <View style={styles.empty}>
+          <Image source={READING} style={styles.emptyArt} contentFit="contain" accessibilityIgnoresInvertColors />
+          <Text style={styles.emptyTitle}>{t("library.emptyShelfTitle")}</Text>
+          <Text style={styles.emptyBody}>{t(canScan ? "library.emptyShelfBody" : "library.emptyShelfBodyWeb")}</Text>
+          {canScan ? <Button label={t("library.scan")} onPress={() => router.push("/book/scan")} /> : null}
+        </View>
+      ) : null}
+
+      {onShelf.length > 0 ? (
+        <>
+          <ShelfDrawing titles={onShelf.map((e) => e.title)} />
+          <View>
+            {onShelf.map((entry) => (
+              <Pressable
+                key={entry.workId}
+                accessibilityRole="button"
+                accessibilityLabel={entry.title}
+                onPress={() => {
+                  setSheetError(null);
+                  setOpen(entry);
+                }}
+                style={styles.row}
+              >
+                <BookCover title={entry.title} width={46} />
+                <View style={styles.rowText}>
+                  <Text style={styles.rowTitle} numberOfLines={2}>
+                    {entry.title}
+                  </Text>
+                  {entry.authorNames.length ? (
+                    <Text style={styles.muted} numberOfLines={1}>
+                      {authorLine(entry.authorNames)}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.visibility}>
+                  <Icon name={entry.isPublic ? "users" : "lock"} color={colors.inkMuted} size={22} />
+                  <Text style={styles.visibilityLabel}>{t(entry.isPublic ? "library.onProfile" : "library.private")}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
+    </>
+  );
+
+  const followedStrip = followed.length ? (
+    <View style={styles.followed}>
+      <Text accessibilityRole="header" style={styles.section}>
+        {t("library.followedTitle")}
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+        {followed.map((item) => (
+          <View key={`${item.accountId}-${item.workId}`} style={styles.stripItem}>
+            <View style={styles.stripCover}>
+              <View style={styles.stripFrame}>
+                <Text style={styles.stripTitle} numberOfLines={3}>
+                  {item.title}
+                </Text>
+                <View style={styles.badge}>
+                  <Icon name="globe" color={colors.ink} size={16} />
+                  <Text style={styles.badgeLabel}>{t("library.publicBadge")}</Text>
+                </View>
+              </View>
+            </View>
+            <Text style={styles.muted} numberOfLines={2}>
+              {t(
+                item.shelf === "read"
+                  ? "library.followedRead"
+                  : item.shelf === "reading"
+                    ? "library.followedReading"
+                    : "library.followedToRead",
+                { name: item.name },
+              )}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  ) : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.column}>
-          <View style={styles.header}>
-            <Text accessibilityRole="header" style={styles.title}>
-              {t("library.myLibrary")}
-            </Text>
-            <ProfileButton always size={44} />
+        {wide ? (
+          // v6 S-60 web: shelves on the left; privacy, the Read record and adding a book on the right.
+          <View style={styles.wide}>
+            {header}
+            <View style={styles.wideRow}>
+              <View style={styles.wideMain}>
+                {shelfContent}
+                {followedStrip}
+              </View>
+              <View style={styles.wideSide}>
+                <PrivacyBanner />
+                {readCard}
+                {notices}
+                {addActions}
+              </View>
+            </View>
           </View>
-
-          <PrivacyBanner />
-
-          {canScan ? (
-            <View style={styles.scanCard}>
-              <Image source={MAGNIFIER} style={styles.scanArt} contentFit="contain" accessibilityIgnoresInvertColors />
-              <View style={styles.scanBody}>
-                <Text style={styles.scanTitle}>
-                  {t("library.scanCardTitle")} <Text style={styles.scanAccent}>{t("library.scanCardAccent")}</Text>
-                </Text>
-                <Text style={styles.muted}>{t("library.scanCardHint")}</Text>
-                <View style={styles.scanActions}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("library.scan")}
-                    onPress={() => router.push("/book/scan")}
-                    style={styles.scanButton}
-                  >
-                    <Text style={styles.scanButtonLabel}>{t("library.scanShort")}</Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("library.addByHand")}
-                    onPress={() => router.push("/book/add")}
-                    style={styles.byHand}
-                  >
-                    <Text style={styles.byHandLabel}>{t("library.byHand")}</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-          ) : (
-            <Button label={t("library.addByHand")} variant="secondary" onPress={() => router.push("/book/add")} />
-          )}
-
-          <ShelfChips value={shelf} onChange={setShelf} />
-
-          {entries && onShelf.length === 0 ? (
-            <View style={styles.empty}>
-              <Image source={READING} style={styles.emptyArt} contentFit="contain" accessibilityIgnoresInvertColors />
-              <Text style={styles.emptyTitle}>{t("library.emptyShelfTitle")}</Text>
-              <Text style={styles.emptyBody}>
-                {t(canScan ? "library.emptyShelfBody" : "library.emptyShelfBodyWeb")}
-              </Text>
-              {canScan ? <Button label={t("library.scan")} onPress={() => router.push("/book/scan")} /> : null}
-            </View>
-          ) : null}
-
-          {onShelf.length > 0 ? (
-            <>
-              <ShelfDrawing titles={onShelf.map((e) => e.title)} />
-              <View>
-                {onShelf.map((entry) => (
-                  <Pressable
-                    key={entry.workId}
-                    accessibilityRole="button"
-                    accessibilityLabel={entry.title}
-                    onPress={() => setOpen(entry)}
-                    style={styles.row}
-                  >
-                    <BookCover title={entry.title} width={46} />
-                    <View style={styles.rowText}>
-                      <Text style={styles.rowTitle} numberOfLines={2}>
-                        {entry.title}
-                      </Text>
-                      {entry.authorNames.length ? (
-                        <Text style={styles.muted} numberOfLines={1}>
-                          {authorLine(entry.authorNames)}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <View style={styles.visibility}>
-                      <Icon name={entry.isPublic ? "users" : "lock"} color={colors.inkMuted} size={22} />
-                      <Text style={styles.visibilityLabel}>
-                        {t(entry.isPublic ? "library.onProfile" : "library.private")}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            </>
-          ) : null}
-
-          {error ? <ErrorText>{error}</ErrorText> : null}
-
-          {followed.length ? (
-            <View style={styles.followed}>
-              <Text accessibilityRole="header" style={styles.section}>
-                {t("library.followedTitle")}
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-                {followed.map((item) => (
-                  <View key={`${item.accountId}-${item.workId}`} style={styles.stripItem}>
-                    <View style={styles.stripCover}>
-                      <View style={styles.stripFrame}>
-                        <Text style={styles.stripTitle} numberOfLines={3}>
-                          {item.title}
-                        </Text>
-                        <View style={styles.badge}>
-                          <Icon name="globe" color={colors.ink} size={16} />
-                          <Text style={styles.badgeLabel}>{t("library.publicBadge")}</Text>
-                        </View>
-                      </View>
-                    </View>
-                    <Text style={styles.muted} numberOfLines={2}>
-                      {t(
-                        item.shelf === "read"
-                          ? "library.followedRead"
-                          : item.shelf === "reading"
-                            ? "library.followedReading"
-                            : "library.followedToRead",
-                        { name: item.name },
-                      )}
-                    </Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          ) : null}
-        </View>
+        ) : (
+          <View style={styles.column}>
+            {header}
+            <PrivacyBanner />
+            {addActions}
+            {notices}
+            {shelfContent}
+            {readCard}
+            {followedStrip}
+          </View>
+        )}
       </ScrollView>
 
       <EntrySheet
         entry={open}
         author={Boolean(session?.authorEnabled)}
         onClose={() => setOpen(null)}
-        onShelf={(entry, next) => run(() => saveBook(entry.workId, next), () => change(entry.workId, { shelf: next }))}
+        error={sheetError}
+        onShelf={(entry, next) =>
+          runInSheet(() => saveBook(entry.workId, next), () => change(entry.workId, { shelf: next }))
+        }
         onPublic={(entry, value) =>
-          run(
+          runInSheet(
             () => setEntryPublic(entry.workId, value),
             () => change(entry.workId, { isPublic: value }),
             "library.privateWork",
           )
         }
         onInspiration={(entry, value) =>
-          run(() => setInspiration(entry.workId, value), () => change(entry.workId, { isInspiration: value }))
+          runInSheet(() => setInspiration(entry.workId, value), () => change(entry.workId, { isInspiration: value }))
         }
         onRemove={(entry) => {
           setOpen(null);
@@ -267,6 +371,35 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.paper },
   scroll: { flexGrow: 1, alignItems: "center", paddingBottom: space.xl },
   column: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: space.lg - 4, gap: space.md + 4 },
+  wide: { width: "100%", maxWidth: 1180, paddingHorizontal: space.xl, gap: space.md + 4 },
+  wideRow: { flexDirection: "row", alignItems: "flex-start", gap: space.xl },
+  wideMain: { flex: 1, minWidth: 0, gap: space.md + 4 },
+  wideSide: { width: 380, gap: space.md },
+  notice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    padding: space.md,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+  },
+  noticeText: { flex: 1, fontFamily: fonts.ui, fontSize: 15, lineHeight: 22, color: colors.ink },
+  readCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    padding: space.lg - 4,
+    borderRadius: radius.sheet,
+    backgroundColor: colors.surface,
+  },
+  readSpines: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
+  readSpine: { width: 12, borderRadius: 2 },
+  spineInk: { height: 44, backgroundColor: colors.ink },
+  spineGold: { height: 52, backgroundColor: colors.gold },
+  spineBurgundy: { height: 46, backgroundColor: colors.burgundy },
+  spinePale: { height: 38, backgroundColor: colors.surfaceMuted },
+  readText: { flex: 1, gap: 2 },
+  readTitle: { fontFamily: fonts.heading, fontSize: 22, color: colors.ink },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: space.lg },
   title: { flex: 1, fontFamily: fonts.heading, fontSize: 32, color: colors.ink },
   muted: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: colors.inkMuted },

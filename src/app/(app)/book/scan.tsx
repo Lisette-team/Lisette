@@ -29,6 +29,14 @@ function Scanner() {
   const [permission, requestPermission] = useCameraPermissions();
   const gate = useRef(createScanGate()).current;
   const asked = useRef(false);
+  // Set when the screen goes away, so a lookup that ends later does not navigate anywhere.
+  const left = useRef(false);
+  useEffect(() => {
+    left.current = false;
+    return () => {
+      left.current = true;
+    };
+  }, []);
   const [phase, setPhase] = useState<Phase>("scanning");
   const [isbn, setIsbn] = useState("");
 
@@ -53,6 +61,7 @@ function Scanner() {
     setIsbn(code);
     setPhase("looking");
     lookupIsbn(code).then((result) => {
+      if (left.current) return;
       if (result.status === "found") {
         router.replace({ pathname: "/book/add", params: { workId: result.work.id } });
       } else {

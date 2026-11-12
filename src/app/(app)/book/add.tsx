@@ -5,10 +5,10 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 
 import { useSession } from "@/features/account/session";
 import {
-  cachedBook,
   createCatalogueWork,
   findSimilarWorks,
   getBook,
+  lookupIsbn,
   myLibrary,
   saveBook,
   type Book,
@@ -26,6 +26,8 @@ type Params = { workId?: string; isbn?: string; reason?: string };
 
 // S-62: add a book to a shelf. With workId (a scanned book) it only picks the shelf; otherwise the
 // person types the book, and Save first shows similar books on Lisette ("Is this the book?").
+// A typed ISBN is looked up like a scan before a new book may carry it, so a hand-typed title never
+// becomes the shared answer for an ISBN that Open Library knows (ruling 2026-11-12).
 export default function AddBook() {
   const { t } = useTranslation();
   const userId = useSession()?.userId ?? "";
@@ -36,6 +38,9 @@ export default function AddBook() {
   const [isbn, setIsbn] = useState(params.isbn ?? "");
   const [shelf, setShelf] = useState<Shelf>("to_read");
   const [matches, setMatches] = useState<Book[] | null>(null);
+  // What a new book created from the sheet carries: the ISBN only when Open Library has no record.
+  const [newIsbn, setNewIsbn] = useState<string | null>(null);
+  const [isbnDropped, setIsbnDropped] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +57,7 @@ export default function AddBook() {
           const entry = list.find((e) => e.workId === params.workId);
           if (active && entry) setShelf(entry.shelf);
         })
-        .catch(() => undefined);
+        .catch(() => active && setError(t("errors.network")));
     }
     return () => {
       active = false;
@@ -64,8 +69,8 @@ export default function AddBook() {
     .map((name) => name.trim())
     .filter(Boolean);
 
-  function done() {
-    router.replace({ pathname: "/library", params: { shelf } });
+  function done(dropped = false) {
+    router.replace({ pathname: "/library", params: dropped ? { shelf, saved: "withoutIsbn" } : { shelf } });
   }
 
   async function attempt(action: () => Promise<void>) {
@@ -80,15 +85,15 @@ export default function AddBook() {
     }
   }
 
-  const isbn13 = () => (isbn.trim() ? toIsbn13(isbn) : null);
+  async function create(isbnToKeep: string | null, dropped: boolean) {
+    const id = await createCatalogueWork(title.trim(), authors, isbnToKeep);
+    await saveBook(id, shelf);
+    done(dropped);
+  }
 
   async function createNew() {
     setMatches(null);
-    await attempt(async () => {
-      const id = await createCatalogueWork(title.trim(), authors, isbn13());
-      await saveBook(id, shelf);
-      done();
-    });
+    await attempt(() => create(newIsbn, isbnDropped));
   }
 
   async function pick(match: Book) {
@@ -112,20 +117,25 @@ export default function AddBook() {
       setError(t("library.titleRequired"));
       return;
     }
-    const code = isbn13();
+    const code = isbn.trim() ? toIsbn13(isbn) : null;
     if (isbn.trim() && !code) {
       setError(t("library.isbnInvalid"));
       return;
     }
     await attempt(async () => {
-      const sameIsbn = code ? await cachedBook(code) : null;
+      // found: offer that book; not_found: a new book may keep the ISBN; unavailable: it may not,
+      // so the ISBN stays free for a verified lookup later.
+      const lookup = code ? await lookupIsbn(code) : null;
+      const sameIsbn = lookup?.status === "found" ? lookup.work : null;
+      const keep = lookup?.status === "not_found" ? code : null;
+      const dropped = lookup?.status === "unavailable";
       const similar = await findSimilarWorks(title.trim(), author.trim() || null);
       const found = [...(sameIsbn ? [sameIsbn] : []), ...similar.filter((s) => s.id !== sameIsbn?.id)];
       if (found.length === 0) {
-        const id = await createCatalogueWork(title.trim(), authors, code);
-        await saveBook(id, shelf);
-        done();
+        await create(keep, dropped);
       } else {
+        setNewIsbn(keep);
+        setIsbnDropped(dropped);
         setMatches(found);
       }
     });

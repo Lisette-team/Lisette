@@ -84,7 +84,7 @@ export async function getBook(id: string): Promise<Book | null> {
     : null;
 }
 
-// Scanner: cache first, then Open Library, through the isbn-lookup Edge Function. Any failure on the
+// Scanner and manual add: cache first, then Open Library, through the isbn-lookup Edge Function. Any failure on the
 // way (offline, timeout, server error) is "unavailable", so the person can still add the book by hand.
 export async function lookupIsbn(isbn: string): Promise<IsbnLookup> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -99,13 +99,6 @@ export async function lookupIsbn(isbn: string): Promise<IsbnLookup> {
   } finally {
     clearTimeout(timer);
   }
-}
-
-// Manual add: a book with this ISBN already on Lisette, from the cache only.
-export async function cachedBook(isbn: string): Promise<Book | null> {
-  const { data, error } = await supabase.rpc("lookup_isbn", { isbn });
-  if (error) throw error;
-  return (data ?? null) as Book | null;
 }
 
 export async function findSimilarWorks(title: string, author: string | null): Promise<Book[]> {
@@ -132,7 +125,7 @@ export async function setEntryPublic(workId: string, isPublic: boolean): Promise
 }
 
 export async function setInspiration(workId: string, on: boolean): Promise<void> {
-  const { error } = await supabase.rpc("set_inspiration", { work_id: workId, on });
+  const { error } = await supabase.rpc("set_inspiration", { work_id: workId, is_on: on });
   if (error) throw error;
 }
 

@@ -40,7 +40,6 @@ jest.mock("@/features/library/api", () => ({
   followedLibrary: jest.fn(),
   getBook: jest.fn(),
   lookupIsbn: jest.fn(),
-  cachedBook: jest.fn(),
   findSimilarWorks: jest.fn(),
   createCatalogueWork: jest.fn(),
   saveBook: jest.fn(),
@@ -82,7 +81,6 @@ beforeEach(() => {
   api.myLibrary.mockResolvedValue([]);
   api.followedLibrary.mockResolvedValue([]);
   api.getBook.mockResolvedValue(FOX);
-  api.cachedBook.mockResolvedValue(null);
   api.findSimilarWorks.mockResolvedValue([]);
   api.createCatalogueWork.mockResolvedValue("w-new");
   api.saveBook.mockResolvedValue(undefined);
@@ -285,6 +283,71 @@ describe("library_is_private_and_scans_recover", () => {
     expect(screen.getAllByText("Public")).toHaveLength(2);
   });
 
+  test("a refused switch is explained inside the sheet", async () => {
+    api.myLibrary.mockResolvedValue([entry()]);
+    api.setEntryPublic.mockRejectedValue({ code: "22023" });
+    await signedIn("/library");
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Amintiri din copilărie" }));
+    await fireEvent(screen.getByRole("switch", { name: "Show on my profile" }), "valueChange", true);
+
+    expect(await screen.findByText("A private project can't appear on your profile.")).toBeOnTheScreen();
+    expect(screen.getByRole("switch", { name: "Show on my profile" }).props.value).toBe(false);
+  });
+
+  test("a book no longer in the library gets its own message", async () => {
+    api.myLibrary.mockResolvedValue([entry()]);
+    api.setEntryPublic.mockRejectedValue({ code: "P0002" });
+    await signedIn("/library");
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Amintiri din copilărie" }));
+    await fireEvent(screen.getByRole("switch", { name: "Show on my profile" }), "valueChange", true);
+
+    expect(await screen.findByText("This book is no longer in your library.")).toBeOnTheScreen();
+  });
+
+  test("the Read card counts this year's finished books and opens the Read shelf", async () => {
+    const year = new Date().getFullYear();
+    const last = `${year}-01-20T10:00:00Z`;
+    api.myLibrary.mockResolvedValue([
+      entry({ workId: "r1", title: "Ion", shelf: "read", updatedAt: last }),
+      entry({ workId: "r2", title: "Baltagul", shelf: "read", updatedAt: `${year}-01-05T10:00:00Z` }),
+      entry({ workId: "r3", title: "Enigma Otiliei", shelf: "read", updatedAt: `${year - 1}-12-30T10:00:00Z` }),
+      entry({ workId: "t1", title: "Amintiri din copilărie" }),
+    ]);
+    await signedIn("/library");
+
+    const date = new Date(last).toLocaleDateString("en", { day: "numeric", month: "long" });
+    expect(await screen.findByText(`2 books in ${year}, the last on ${date}`)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: `Read. 2 books in ${year}, the last on ${date}` }));
+
+    expect(await screen.findByText("Baltagul")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Amintiri din copilărie" })).toBeNull();
+  });
+
+  test("a failed load of the library is shown, not hidden", async () => {
+    api.myLibrary.mockRejectedValue(new Error("offline"));
+    api.followedLibrary.mockRejectedValue(new Error("offline"));
+    await signedIn("/library");
+
+    expect(await screen.findByText("You seem to be offline. Check your connection and try again.")).toBeOnTheScreen();
+  });
+
+  test("a lookup that ends after leaving the scanner does not open manual add", async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    api.lookupIsbn.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const app = await signedIn("/library");
+
+    await fireEvent.press((await screen.findAllByRole("button", { name: "Scan a book" }))[0]);
+    await scan("9780140328721");
+    await screen.findByText("Looking up the book by ISBN");
+    await fireEvent.press(screen.getByRole("button", { name: "Back" }));
+    await waitFor(() => expect(app.getPathname()).toBe("/library"));
+
+    await act(async () => answer({ status: "not_found" }));
+    expect(app.getPathname()).toBe("/library");
+  });
+
   test("no strip when no followed author shares a book", async () => {
     await signedIn("/library");
 
@@ -340,13 +403,60 @@ describe("similar_books_never_merge", () => {
     expect(api.saveBook).not.toHaveBeenCalledWith("w-old", expect.anything());
   });
 
-  test("a book already on Lisette with the typed ISBN is offered first", async () => {
-    api.cachedBook.mockResolvedValue(FOX);
+  test("a typed ISBN is looked up first, and the book found is offered with the similar ones", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "found", work: FOX });
+    api.findSimilarWorks.mockResolvedValue([SIMILAR]);
     await fillManualAdd("Mr Fox", "Dahl", "0-14-032872-6");
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() => expect(api.cachedBook).toHaveBeenCalledWith("9780140328721"));
+    await waitFor(() => expect(api.lookupIsbn).toHaveBeenCalledWith("9780140328721"));
     expect(await screen.findByRole("button", { name: "Fantastic Mr Fox, Roald Dahl" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Anotimpul cenușiu, Elena Dobre" })).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("button", { name: "Fantastic Mr Fox, Roald Dahl" }));
+    await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-fox", "to_read"));
+    expect(api.createCatalogueWork).not.toHaveBeenCalled();
+  });
+
+  test("an ISBN Open Library does not know stays on the new book", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "not_found" });
+    await fillManualAdd("Iarna lungă", "Dan Ilie", "978-0-306-40615-7");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(api.createCatalogueWork).toHaveBeenCalledWith("Iarna lungă", ["Dan Ilie"], "9780306406157"),
+    );
+  });
+
+  test("when the ISBN cannot be checked, the book is saved without it and the person is told", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "unavailable" });
+    const app = await fillManualAdd("Iarna lungă", "Dan Ilie", "9780306406157");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Iarna lungă", ["Dan Ilie"], null));
+    await waitFor(() => expect(app.getPathname()).toBe("/library"));
+    expect(
+      await screen.findByText("Book saved without its ISBN, because we couldn't check it right now."),
+    ).toBeOnTheScreen();
+  });
+
+  test("a prefilled ISBN from a failed lookup is looked up again on Save", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "not_found" });
+    const app = await signedIn("/book/add?isbn=9780306406157&reason=unavailable");
+    await fireEvent.changeText(await screen.findByLabelText("Title"), "Iarna lungă");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.lookupIsbn).toHaveBeenCalledWith("9780306406157"));
+    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Iarna lungă", [], "9780306406157"));
+    await waitFor(() => expect(app.getPathname()).toBe("/library"));
+  });
+
+  test("without an ISBN, nothing is looked up", async () => {
+    await fillManualAdd("Carte", "Autor");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalled());
+    expect(api.lookupIsbn).not.toHaveBeenCalled();
   });
 
   test("an ISBN that is not valid is refused before anything is saved", async () => {

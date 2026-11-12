@@ -394,7 +394,14 @@
     "removeTitle": "Scoți cartea din bibliotecă?",
     "removeBody": "Cartea rămâne pe Lisette. Doar intrarea ta dispare.",
     "removeYes": "Da, scoate",
-    "privateWork": "Un proiect privat nu poate apărea pe profil."
+    "privateWork": "Un proiect privat nu poate apărea pe profil.",
+    "notInLibrary": "Cartea nu mai e în biblioteca ta.",
+    "savedWithoutIsbn": "Am salvat cartea fără ISBN, pentru că nu l-am putut verifica acum.",
+    "readSummary_one": "{{count}} carte în {{year}}, ultima pe {{date}}",
+    "readSummary_few": "{{count}} cărți în {{year}}, ultima pe {{date}}",
+    "readSummary_other": "{{count}} de cărți în {{year}}, ultima pe {{date}}",
+    "readSummaryNone": "Nicio carte terminată încă în {{year}}",
+    "readCardLabel": "Citite. {{summary}}"
   },
   "reviews": {
     "rate": "Nota ta",

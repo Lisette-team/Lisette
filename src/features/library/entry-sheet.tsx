@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { Button } from "@/ui/button";
+import { ErrorText } from "@/ui/screen";
 import { colors, fonts, radius, space } from "@/ui/theme";
 
 import type { LibraryEntry, Shelf } from "./api";
@@ -10,6 +11,8 @@ import { BookCover, ShelfChips, authorLine } from "./parts";
 type Props = {
   entry: LibraryEntry | null;
   author: boolean;
+  // Shown inside the sheet when a change is refused; the switch keeps its saved value.
+  error: string | null;
   onClose: () => void;
   onShelf: (entry: LibraryEntry, shelf: Shelf) => void;
   onPublic: (entry: LibraryEntry, value: boolean) => void;
@@ -19,7 +22,7 @@ type Props = {
 
 // The entry's own controls: shelf, public switch, inspiration (authors) and remove. The book page
 // itself comes in 04.2.
-export function EntrySheet({ entry, author, onClose, onShelf, onPublic, onInspiration, onRemove }: Props) {
+export function EntrySheet({ entry, author, error, onClose, onShelf, onPublic, onInspiration, onRemove }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -70,6 +73,8 @@ export function EntrySheet({ entry, author, onClose, onShelf, onPublic, onInspir
                 />
               </View>
             ) : null}
+
+            {error ? <ErrorText>{error}</ErrorText> : null}
 
             <View style={styles.actions}>
               <Button label={t("library.remove")} variant="link" onPress={() => onRemove(entry)} />
