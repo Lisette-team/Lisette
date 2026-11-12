@@ -414,10 +414,13 @@ enabled = true
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
-# Both functions verify the caller's token in code (supabase/functions/_shared/caller.ts) and must
+# The functions verify the caller's token in code (supabase/functions/_shared/caller.ts) and must
 # answer the browser's CORS preflight, which carries no token.
 [functions.manuscript-upload]
 verify_jwt = false
 
 [functions.manuscript-file]
+verify_jwt = false
+
+[functions.isbn-lookup]
 verify_jwt = false
