@@ -35,7 +35,8 @@ Sources: https://openlibrary.org/developers/api and https://openlibrary.org/dev/
   The last two give the same answer, `{status: "created", workId, isbnKept: false}`, so the response never reveals that a private work holds the ISBN.
 - `cache_isbn_work` returns null when the row holding the ISBN is not public. The lookup then answers `unavailable`.
 - An ISMN (9790…, printed music) is not accepted as an ISBN by the app or the Edge Function. The database's `is_valid_isbn13` (01.3, shared `works`) still accepts it; changing it needs both streams to agree.
-- Gateway test seam: the headers `x-lisette-open-library-url` and `x-lisette-service-key` point the function at a stub Open Library. They take effect only when the key equals the service role key, which only the server and local test setups hold. `tests/gateway/isbn_create.test.ts` uses them with a stub served from the test process (`host.docker.internal`).
+- Gateway tests: the function reads Open Library's address only from the `OPEN_LIBRARY_URL` environment variable; requests cannot change it. `tests/gateway/isbn_create.test.ts` serves a stub Open Library on port 54399 and runs only when the git-ignored `supabase/functions/.env` contains `OPEN_LIBRARY_URL=http://host.docker.internal:54399`, which the CLI loads into the Edge Runtime at `supabase start`. CI writes that file before starting the stack. Locally, add the line and restart the stack to run these tests. While it is set, local ISBN lookups go to the stub instead of openlibrary.org; remove the line and restart for real lookups.
+- Existence-leak caveat: a plain lookup answering `not_found`, followed by a create answering `isbnKept: false`, hints that a hidden row holds the ISBN. This is theoretical today, because no client path puts an ISBN on a private work. It becomes real if authors can later set ISBNs on their own projects.
 
 ## Known gaps
 

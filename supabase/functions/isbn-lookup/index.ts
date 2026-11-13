@@ -17,14 +17,9 @@ import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { admin, caller, cors, json } from "../_shared/caller.ts";
 import { isIsbn13, lookupOpenLibrary, OPEN_LIBRARY_URL, type LookupResult } from "../_shared/open-library.ts";
 
-// Test seam for the gateway tests: another Open Library address, honoured only together with the
-// service role key, which only the server and local test setups hold.
-function openLibraryUrl(req: Request): string {
-  const override = req.headers.get("x-lisette-open-library-url");
-  const key = req.headers.get("x-lisette-service-key");
-  if (override && key && key === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) return override;
-  return Deno.env.get("OPEN_LIBRARY_URL") ?? OPEN_LIBRARY_URL;
-}
+// OPEN_LIBRARY_URL replaces openlibrary.org only where it is set: the local stack's gateway tests set
+// it to a stub in supabase/functions/.env (git-ignored). Requests cannot change it.
+const openLibraryUrl = Deno.env.get("OPEN_LIBRARY_URL") || OPEN_LIBRARY_URL;
 
 type Lookup = { status: "found"; work: unknown } | { status: "not_found" } | { status: "unavailable" };
 
@@ -65,7 +60,7 @@ Deno.serve(async (req) => {
   const isbn = body?.isbn;
   if (typeof isbn !== "string" || !isIsbn13(isbn)) return json(400, { error: "bad_request" });
 
-  if (body?.create !== true) return json(200, await lookup(who.db, isbn, openLibraryUrl(req)));
+  if (body?.create !== true) return json(200, await lookup(who.db, isbn, openLibraryUrl));
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const authors = Array.isArray(body.authors) ? body.authors : [];
@@ -74,7 +69,7 @@ Deno.serve(async (req) => {
   }
 
   // Checked again here, so a client cannot skip the lookup and claim an ISBN.
-  const found = await lookup(who.db, isbn, openLibraryUrl(req));
+  const found = await lookup(who.db, isbn, openLibraryUrl);
   if (found.status === "found") return json(200, found);
 
   // Created as the caller: create_catalogue_work checks the person account and the title.
