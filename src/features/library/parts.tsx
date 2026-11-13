@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import type React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "@/ui/icon";
@@ -84,36 +85,106 @@ const SPINES = [
   { fill: colors.inkMuted, text: colors.paper },
   { fill: "#E6CF9A", text: colors.ink },
 ];
-const SPINE_WIDTH = 34;
+// One spine with its title running up it. With onPress it opens the entry (S-60 web bookcase).
+function Spine({
+  title,
+  index,
+  width,
+  height,
+  onPress,
+}: {
+  title: string;
+  index: number;
+  width: number;
+  height: number;
+  onPress?: () => void;
+}) {
+  const look = SPINES[(hash(title) + index) % SPINES.length];
+  const label = height - 28;
+  const body = (
+    <>
+      <View style={[styles.band, styles.bandTop]} />
+      <View style={[styles.spineLabel, { width: label, left: (width - label) / 2, top: (height - 22) / 2 }]}>
+        <Text numberOfLines={1} style={[styles.spineTitle, { color: look.text, fontSize: width < 32 ? 12 : 14 }]}>
+          {title}
+        </Text>
+      </View>
+      <View style={[styles.band, styles.bandBottom]} />
+    </>
+  );
+  const style = [styles.spine, { width, height, backgroundColor: look.fill }];
+  return onPress ? (
+    <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={style}>
+      {body}
+    </Pressable>
+  ) : (
+    <View style={style}>{body}</View>
+  );
+}
 
 // The shelf drawing from v6 S-60: one spine per book, with its title running up the spine.
 export function ShelfDrawing({ titles }: { titles: string[] }) {
   return (
     <View style={styles.shelf} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <View style={styles.spines}>
-        {titles.slice(0, 9).map((title, i) => {
-          const h = hash(title);
-          const look = SPINES[(h + i) % SPINES.length];
-          const height = 150 + (h % 4) * 15;
-          return (
-            <View key={`${title}-${i}`} style={[styles.spine, { height, backgroundColor: look.fill }]}>
-              <View style={[styles.band, styles.bandTop]} />
-              <View
-                style={[
-                  styles.spineLabel,
-                  { width: height - 40, left: (SPINE_WIDTH - (height - 40)) / 2, top: (height - 22) / 2 },
-                ]}
-              >
-                <Text numberOfLines={1} style={[styles.spineTitle, { color: look.text }]}>
-                  {title}
-                </Text>
-              </View>
-              <View style={[styles.band, styles.bandBottom]} />
-            </View>
-          );
-        })}
+        {/* Eight 30 px spines fit the narrowest phones (320 px of content). */}
+        {titles.slice(0, 8).map((title, i) => (
+          <Spine key={`${title}-${i}`} title={title} index={i} width={30} height={150 + (hash(title) % 4) * 15} />
+        ))}
       </View>
       <View style={styles.board} />
+    </View>
+  );
+}
+
+const PER_SHELF = 14;
+
+// Books spread over the shelves as in the design (six above, four below for ten): the top shelf
+// takes about 60 %, and more shelves are added only past two full ones.
+function shelvesFor<T>(entries: T[]): T[][] {
+  if (entries.length <= 3) return [entries, []];
+  if (entries.length <= PER_SHELF * 2) {
+    const top = Math.ceil(entries.length * 0.6);
+    return [entries.slice(0, top), entries.slice(top)];
+  }
+  const rows: T[][] = [];
+  for (let i = 0; i < entries.length; i += PER_SHELF) rows.push(entries.slice(i, i + PER_SHELF));
+  return rows;
+}
+
+// The arched bookcase of v6 S-60 web: the shelf's books on gold planks, at least two of them. Each
+// spine opens the entry's controls; `empty` is shown inside when the shelf has no books.
+export function Bookcase<T extends { workId: string; title: string }>({
+  entries,
+  onOpen,
+  empty,
+}: {
+  entries: T[];
+  onOpen: (entry: T) => void;
+  empty?: React.ReactNode;
+}) {
+  const rows = shelvesFor(entries);
+  let index = 0;
+  return (
+    <View style={styles.bookcase}>
+      {entries.length === 0 && empty ? <View style={styles.bookcaseEmpty}>{empty}</View> : null}
+      {rows.map((row, r) => (
+        <View key={r} style={styles.bookcaseShelf}>
+          <View style={[styles.bookcaseBooks, { minHeight: r === 0 ? 136 : 96 }]}>
+            {row.map((entry) => (
+              <Spine
+                key={entry.workId}
+                title={entry.title}
+                index={index++}
+                width={30}
+                height={r === 0 ? 112 + (hash(entry.title) % 4) * 8 : 88 + (hash(entry.title) % 2) * 8}
+                onPress={() => onOpen(entry)}
+              />
+            ))}
+          </View>
+          <View style={styles.plank} />
+        </View>
+      ))}
     </View>
   );
 }
@@ -144,12 +215,30 @@ const styles = StyleSheet.create({
   coverLetter: { fontFamily: fonts.heading },
   coverStar: { fontSize: 8 },
   shelf: { borderRadius: radius.card, backgroundColor: colors.surfaceMuted, paddingTop: space.lg, overflow: "hidden" },
-  spines: { flexDirection: "row", alignItems: "flex-end", gap: 6, paddingHorizontal: space.lg },
-  spine: { width: SPINE_WIDTH, borderTopLeftRadius: 4, borderTopRightRadius: 4, overflow: "hidden" },
+  spines: { flexDirection: "row", alignItems: "flex-end", gap: 4, paddingHorizontal: space.lg },
+  spine: { borderTopLeftRadius: 4, borderTopRightRadius: 4, overflow: "hidden" },
   spineLabel: { position: "absolute", height: 22, justifyContent: "center", transform: [{ rotate: "-90deg" }] },
   spineTitle: { textAlign: "center", fontFamily: fonts.heading, fontSize: 14 },
   band: { position: "absolute", left: 0, right: 0, height: 2, backgroundColor: colors.gold },
   bandTop: { top: 10 },
   bandBottom: { bottom: 10 },
+  bookcase: {
+    minHeight: 460,
+    gap: 56,
+    paddingTop: 100,
+    paddingBottom: space.xxl + 16,
+    paddingHorizontal: space.md - 2,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    borderTopLeftRadius: 150,
+    borderTopRightRadius: 150,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: colors.surfaceMuted,
+  },
+  bookcaseEmpty: { alignItems: "center", gap: space.sm, paddingHorizontal: space.lg, marginTop: -60, marginBottom: -40 },
+  bookcaseShelf: { alignItems: "stretch" },
+  bookcaseBooks: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 4, minHeight: 20 },
+  plank: { height: 5, backgroundColor: colors.gold },
   board: { height: 14, backgroundColor: "#A47A55", borderTopWidth: 0, borderBottomWidth: 4, borderBottomColor: "#7E5A3C" },
 });

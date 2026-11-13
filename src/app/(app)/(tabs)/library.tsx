@@ -20,10 +20,11 @@ import {
   type Shelf,
 } from "@/features/library/api";
 import { EntrySheet } from "@/features/library/entry-sheet";
-import { BookCover, PrivacyBanner, ShelfChips, ShelfDrawing, authorLine } from "@/features/library/parts";
+import { BookCover, Bookcase, PrivacyBanner, ShelfChips, ShelfDrawing, authorLine } from "@/features/library/parts";
 import { Button } from "@/ui/button";
 import { Dialog } from "@/ui/dialog";
 import { Icon } from "@/ui/icon";
+import { useWide } from "@/ui/layout";
 import { ErrorText } from "@/ui/screen";
 import { colors, contentMaxWidth, fonts, radius, space } from "@/ui/theme";
 
@@ -32,9 +33,6 @@ const READING = require("../../../../assets/illustrations/semn-citeste.svg");
 
 // Scanning needs the phone camera; on the web, books are added by hand (v6 S-60 web).
 const canScan = Platform.OS !== "web";
-
-// From this width the library uses the two-column layout of v6 S-60 web.
-const WIDE = 960;
 
 // Books on the Read shelf moved there this year, and the latest. updated_at is the closest record of
 // when a book was finished: it also changes when the entry is edited later.
@@ -63,8 +61,8 @@ export default function Library() {
   const [error, setError] = useState<string | null>(null);
   // Errors from the entry sheet are shown inside it, next to the control that was refused.
   const [sheetError, setSheetError] = useState<string | null>(null);
-  const { width } = useWindowDimensions();
-  const wide = width >= WIDE;
+  const { height } = useWindowDimensions();
+  const wide = useWide();
 
   // Reloaded on every visit, so a book added from the scanner shows up when coming back.
   useFocusEffect(
@@ -302,19 +300,41 @@ export default function Library() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {wide ? (
-          // v6 S-60 web: shelves on the left; privacy, the Read record and adding a book on the right.
-          <View style={styles.wide}>
-            {header}
-            <View style={styles.wideRow}>
-              <View style={styles.wideMain}>
-                {shelfContent}
-                {followedStrip}
-              </View>
-              <View style={styles.wideSide}>
-                <PrivacyBanner />
-                {readCard}
-                {notices}
-                {addActions}
+          // v6 S-60 web: the title, the shelf chips and the arched bookcase on the left; the privacy
+          // note, this year's Read count and manual add (at the bottom) on the right. The followed
+          // authors' strip has room in the right column, above the fold.
+          <View style={[styles.wide, { minHeight: height }]}>
+            <View style={styles.wideMain}>
+              <Text accessibilityRole="header" style={styles.wideTitle}>
+                {t("library.title")}
+              </Text>
+              <ShelfChips value={shelf} onChange={setShelf} />
+              {entries ? (
+                <Bookcase
+                  entries={onShelf}
+                  onOpen={(entry) => {
+                    setSheetError(null);
+                    setOpen(entry);
+                  }}
+                  empty={
+                    <>
+                      <Image source={READING} style={styles.wideEmptyArt} contentFit="contain" accessibilityIgnoresInvertColors />
+                      <Text style={styles.emptyTitle}>{t("library.emptyShelfTitle")}</Text>
+                      <Text style={styles.emptyBody}>{t("library.emptyShelfBodyWeb")}</Text>
+                    </>
+                  }
+                />
+              ) : null}
+            </View>
+            <View style={styles.wideSide}>
+              <PrivacyBanner />
+              {read ? (
+                <Text style={styles.readCount}>{t("library.readThisYear", { year: read.year, count: read.count })}</Text>
+              ) : null}
+              {notices}
+              {followedStrip}
+              <View style={styles.wideBottom}>
+                <Button label={t("library.addByHand")} variant="secondary" onPress={() => router.push("/book/add")} />
               </View>
             </View>
           </View>
@@ -371,10 +391,14 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.paper },
   scroll: { flexGrow: 1, alignItems: "center", paddingBottom: space.xl },
   column: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: space.lg - 4, gap: space.md + 4 },
-  wide: { width: "100%", maxWidth: 1180, paddingHorizontal: space.xl, gap: space.md + 4 },
-  wideRow: { flexDirection: "row", alignItems: "flex-start", gap: space.xl },
-  wideMain: { flex: 1, minWidth: 0, gap: space.md + 4 },
-  wideSide: { width: 380, gap: space.md },
+  // Measured from s-60-biblioteca-web.png: 32 px margins, a 380 px right column 32 px from the bookcase.
+  wide: { width: "100%", flexDirection: "row", gap: space.xl, padding: space.xl, paddingTop: space.lg + 4 },
+  wideMain: { flex: 1, minWidth: 0, maxWidth: 760, gap: space.md },
+  wideTitle: { fontFamily: fonts.heading, fontSize: 30, color: colors.ink },
+  wideSide: { width: 380, gap: space.md + 4, paddingTop: 104 },
+  wideBottom: { flex: 1, justifyContent: "flex-end", paddingTop: space.lg },
+  wideEmptyArt: { width: 96, height: 96 },
+  readCount: { fontFamily: fonts.ui, fontSize: 15, color: colors.inkMuted },
   notice: {
     flexDirection: "row",
     alignItems: "center",

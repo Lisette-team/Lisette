@@ -4,6 +4,9 @@ import type { Book, LibraryEntry } from "@/features/library/api";
 
 import { createFakeSupabase, type FakeSupabase } from "./helpers/fake-supabase";
 
+// Each test renders the whole router; give slow machines (a dev server running alongside) room.
+jest.setTimeout(20_000);
+
 const mockDeviceStorage = new Map<string, string>();
 let mockSupabase: FakeSupabase;
 
@@ -11,6 +14,7 @@ type Permission = { granted: boolean; canAskAgain: boolean; status: string };
 let mockPermission: Permission | null;
 const mockRequestPermission = jest.fn();
 let mockOnScan: ((result: { data: string; type: string }) => void) | undefined;
+let mockCameraProps: { barcodeScannerSettings?: { barcodeTypes?: string[] } } | undefined;
 
 jest.mock("@/lib/storage", () => ({
   getItem: async (key: string) => mockDeviceStorage.get(key) ?? null,
@@ -23,11 +27,18 @@ jest.mock("@/lib/supabase", () => ({
   },
 }));
 jest.mock("@/ui/launch-video", () => ({ LaunchVideo: () => null }));
+// Phone layout unless a test switches to the wide (web/tablet) one.
+let mockWide = false;
+jest.mock("@/ui/layout", () => ({ ...jest.requireActual("@/ui/layout"), useWide: () => mockWide }));
 // The camera is replaced by a stand-in that hands its barcode callback to the test.
 jest.mock("expo-camera", () => ({
   useCameraPermissions: () => [mockPermission, mockRequestPermission],
-  CameraView: (props: { onBarcodeScanned?: (result: { data: string; type: string }) => void }) => {
+  CameraView: (props: {
+    onBarcodeScanned?: (result: { data: string; type: string }) => void;
+    barcodeScannerSettings?: { barcodeTypes?: string[] };
+  }) => {
     mockOnScan = props.onBarcodeScanned;
+    mockCameraProps = props;
     return null;
   },
 }));
@@ -78,6 +89,7 @@ beforeEach(() => {
   mockSupabase = createFakeSupabase();
   mockPermission = { granted: true, canAskAgain: true, status: "granted" };
   mockOnScan = undefined;
+  mockWide = false;
   api.myLibrary.mockResolvedValue([]);
   api.followedLibrary.mockResolvedValue([]);
   api.getBook.mockResolvedValue(FOX);
@@ -174,11 +186,37 @@ describe("library_is_private_and_scans_recover", () => {
     await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-fox", "read"));
   });
 
-  test("a barcode that is not an ISBN shows the failed scan, and Try again scans again", async () => {
+  test("the scanner also reacts to product barcodes, not only EAN-13", async () => {
+    await signedIn("/book/scan");
+    await waitFor(() => expect(mockCameraProps?.barcodeScannerSettings?.barcodeTypes).toEqual(["ean13", "ean8", "upc_a", "upc_e"]));
+  });
+
+  test.each([
+    ["an EAN-13 product code", "4006381333931", "ean13"],
+    ["an EAN-8 code", "96385074", "ean8"],
+    ["a UPC-A code", "036000291452", "upc_a"],
+    ["a UPC-E code", "04252614", "upc_e"],
+  ])("%s is explained as not a book's ISBN", async (_name, code, type) => {
+    await signedIn("/book/scan");
+    await waitFor(() => expect(mockOnScan).toBeDefined());
+    await act(async () => mockOnScan?.({ data: code, type }));
+
+    expect(
+      await screen.findByText(
+        "This isn't a book's ISBN. Look for the barcode that starts with 978 or 979, usually on the back cover.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText("We couldn't scan that barcode. Try again, or add the book by hand.")).toBeNull();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Add the book by hand" })).toBeOnTheScreen();
+    expect(api.lookupIsbn).not.toHaveBeenCalled();
+  });
+
+  test("a book code with a wrong check digit shows the failed scan, and Try again scans again", async () => {
     api.lookupIsbn.mockResolvedValue({ status: "found", work: FOX });
     await signedIn("/book/scan");
 
-    await scan("4006381333931");
+    await scan("9780140328722");
     expect(await screen.findByText("We couldn't scan that barcode. Try again, or add the book by hand.")).toBeOnTheScreen();
     expect(api.lookupIsbn).not.toHaveBeenCalled();
 
@@ -348,6 +386,28 @@ describe("library_is_private_and_scans_recover", () => {
     expect(app.getPathname()).toBe("/library");
   });
 
+  test("on wide screens the library is the S-60 web layout: bookcase, Read count and manual add", async () => {
+    mockWide = true;
+    const year = new Date().getFullYear();
+    api.myLibrary.mockResolvedValue([
+      entry(),
+      entry({ workId: "r1", title: "Ion", shelf: "read", updatedAt: `${year}-02-01T10:00:00Z` }),
+    ]);
+    const app = await signedIn("/library");
+
+    expect(await screen.findByText(`Read in ${year}: 1 book`)).toBeOnTheScreen();
+    expect(screen.getByRole("header", { name: "Library" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Scan a book" })).toBeNull();
+
+    // Each spine opens the entry's controls.
+    await fireEvent.press(await screen.findByRole("button", { name: "Amintiri din copilărie" }));
+    expect(screen.getByRole("switch", { name: "Show on my profile" })).toBeOnTheScreen();
+    await fireEvent.press(screen.getAllByRole("button", { name: "Close" }).at(-1)!);
+
+    await fireEvent.press(screen.getByRole("button", { name: "Add the book by hand" }));
+    await waitFor(() => expect(app.getPathname()).toBe("/book/add"));
+  });
+
   test("no strip when no followed author shares a book", async () => {
     await signedIn("/library");
 
@@ -466,6 +526,46 @@ describe("similar_books_never_merge", () => {
     expect(await screen.findByText("This ISBN doesn't look right. Check the digits or leave it empty.")).toBeOnTheScreen();
     expect(api.findSimilarWorks).not.toHaveBeenCalled();
     expect(api.createCatalogueWork).not.toHaveBeenCalled();
+  });
+
+  test("with only a valid ISBN, the book found is offered", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "found", work: FOX });
+    await fillManualAdd("", "", "9780140328721");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Fantastic Mr Fox, Roald Dahl" }));
+    await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-fox", "to_read"));
+    expect(api.createCatalogueWork).not.toHaveBeenCalled();
+    expect(api.findSimilarWorks).not.toHaveBeenCalled();
+  });
+
+  test("with only an ISBN Open Library does not know, the title is asked for", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "not_found" });
+    const app = await fillManualAdd("", "", "9780306406157");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    expect(
+      await screen.findByText("We couldn't find this book by its ISBN. Add the title and author."),
+    ).toBeOnTheScreen();
+    expect(api.createCatalogueWork).not.toHaveBeenCalled();
+    expect(app.getPathname()).toBe("/book/add");
+  });
+
+  test("with only an ISBN that cannot be checked now, the title is asked for", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "unavailable" });
+    await fillManualAdd("", "", "9780306406157");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("We couldn't check the ISBN right now. Write the title to add the book.")).toBeOnTheScreen();
+    expect(api.createCatalogueWork).not.toHaveBeenCalled();
+  });
+
+  test("the ISBN field says at once whether the digits form an ISBN", async () => {
+    await fillManualAdd("", "", "978-0-14-032872-2");
+    expect(screen.getByText("These digits don't form a valid ISBN. Check them.")).toBeOnTheScreen();
+
+    await fireEvent.changeText(screen.getByLabelText("ISBN (optional)"), "978-0-14-032872-1");
+    expect(screen.getByText("Valid ISBN. You can leave the title empty: we'll look it up.")).toBeOnTheScreen();
   });
 
   test("a title is required", async () => {
