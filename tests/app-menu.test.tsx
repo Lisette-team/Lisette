@@ -2,6 +2,9 @@ import { fireEvent, renderRouter, screen, waitFor } from "expo-router/testing-li
 
 import { createFakeSupabase, type FakeSupabase } from "./helpers/fake-supabase";
 
+// Each test renders the whole router; give slow machines (a dev server running alongside) room.
+jest.setTimeout(20_000);
+
 const mockDeviceStorage = new Map<string, string>();
 let mockSupabase: FakeSupabase;
 
@@ -16,11 +19,14 @@ jest.mock("@/lib/supabase", () => ({
   },
 }));
 jest.mock("@/ui/launch-video", () => ({ LaunchVideo: () => null }));
+let mockWide = false;
+jest.mock("@/ui/layout", () => ({ ...jest.requireActual("@/ui/layout"), useWide: () => mockWide }));
 
 beforeEach(() => {
   mockDeviceStorage.clear();
   mockDeviceStorage.set("lisette.locale", "en");
   mockSupabase = createFakeSupabase();
+  mockWide = false;
 });
 
 function signedIn(authorEnabled: boolean, initialUrl = "/home") {
@@ -66,5 +72,34 @@ describe("app_menu", () => {
     await waitFor(() => expect(app.getPathname()).toBe("/manuscripts"));
     expect(await screen.findByRole("tab", { name: "Manuscripts" })).toBeOnTheScreen();
     expect(screen.queryByRole("tab", { name: "Profile" })).toBeNull();
+  });
+});
+
+describe("wide_screen_shell", () => {
+  test("wide screens get the left sidebar instead of the bottom bar", async () => {
+    mockWide = true;
+    const app = await signedIn(true);
+
+    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Manuscripts", "Profile"]));
+    expect(screen.getByRole("tab", { name: "Home" })).toBeSelected();
+    expect(screen.getByRole("button", { name: "Create" })).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("tab", { name: "Library" }));
+    await waitFor(() => expect(app.getPathname()).toBe("/library"));
+    expect(screen.getByRole("tab", { name: "Library" })).toBeSelected();
+  });
+
+  test("a reader's sidebar has no Manuscripts", async () => {
+    mockWide = true;
+    await signedIn(false);
+
+    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Profile"]));
+  });
+
+  test("the sidebar stays on screens outside the tabs", async () => {
+    mockWide = true;
+    await signedIn(false, "/settings");
+
+    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Profile"]));
   });
 });
