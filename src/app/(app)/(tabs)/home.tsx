@@ -21,6 +21,7 @@ import { FeedCard } from "@/features/community/post-card";
 import { Avatar } from "@/ui/avatar";
 import { Button } from "@/ui/button";
 import { Icon, type IconName } from "@/ui/icon";
+import { useWide } from "@/ui/layout";
 import { ErrorText } from "@/ui/screen";
 import { colors, contentMaxWidth, fonts, radius, space } from "@/ui/theme";
 
@@ -51,6 +52,7 @@ export default function Home() {
   const [notice, setNotice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const part = partOfDay(new Date().getHours());
+  const wide = useWide();
 
   // Reloaded on every visit, so a new post or follow shows up when coming back.
   useFocusEffect(
@@ -112,10 +114,24 @@ export default function Home() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Stays at the top while the street illustration and the feed scroll under it. */}
       <View style={styles.topBar}>
-        <View style={styles.brand}>
-          <Image source={MARK} style={styles.mark} contentFit="contain" accessibilityIgnoresInvertColors />
-          <Text style={styles.wordmark}>Lisette</Text>
-        </View>
+        {wide ? (
+          // The sidebar already carries the wordmark; on wide screens the page has its own create
+          // action instead of the phone's + button.
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("community.composerTitle")}
+            onPress={() => router.push("/create")}
+            style={styles.newPost}
+          >
+            <Icon name="plus" color={colors.onBurgundy} size={18} />
+            <Text style={styles.newPostLabel}>{t("community.composerTitle")}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.brand}>
+            <Image source={MARK} style={styles.mark} contentFit="contain" accessibilityIgnoresInvertColors />
+            <Text style={styles.wordmark}>Lisette</Text>
+          </View>
+        )}
         <ProfileButton always size={40} />
       </View>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -213,6 +229,17 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.lineSoft,
   },
   brand: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  newPost: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+    minHeight: 40,
+    marginVertical: space.sm,
+    paddingHorizontal: space.md + 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.burgundy,
+  },
+  newPostLabel: { fontFamily: fonts.uiSemiBold, fontSize: 15, color: colors.onBurgundy },
   mark: { width: 24, height: 35 },
   wordmark: { fontFamily: fonts.heading, fontSize: 22, color: colors.ink },
   header: { width: "100%", aspectRatio: 360 / 150, maxHeight: 220 },

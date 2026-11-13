@@ -4,6 +4,7 @@ import type { ColorValue } from "react-native";
 
 import { useSession } from "@/features/account/session";
 import { Icon, type IconName } from "@/ui/icon";
+import { useWide } from "@/ui/layout";
 import { TabBar } from "@/ui/tab-bar";
 
 const icon = (name: IconName) =>
@@ -16,11 +17,13 @@ const icon = (name: IconName) =>
 export default function TabsLayout() {
   const { t } = useTranslation();
   const author = useSession()?.authorEnabled ?? false;
+  // Wide screens use the sidebar from the app layout instead of this bar.
+  const wide = useWide();
 
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
-      tabBar={(props) => <TabBar {...props} hidden={author ? "profile" : "manuscripts"} />}
+      tabBar={(props) => (wide ? null : <TabBar {...props} hidden={author ? "profile" : "manuscripts"} />)}
     >
       <Tabs.Screen name="home" options={{ title: t("nav.home"), tabBarIcon: icon("home") }} />
       <Tabs.Screen name="discover" options={{ title: t("nav.discover"), tabBarIcon: icon("compass") }} />

@@ -394,9 +394,9 @@ const TABLES = [
   T("works", "works", "setari", "Tabelul central de cărți: fiecare carte e un singur rând, comun pentru toți utilizatorii; notele, recenziile, bibliotecile, fragmentele și evenimentele indică spre el. Poate fi o carte publicată găsită după ISBN sau un proiect nepublicat al unui autor. Secțiunea Work in progress de pe profil = operele cu owner_id = autorul, visibility = public și is_published = false, împreună cu fragmentele lor permise. Un proiect e privat până când autorul îl face public.", [
     "id*|uuid|", "title|text|1–200 caractere; căutare după asemănare (index pg_trgm) pentru „Aceasta e cartea?”", "description?|text|max 2000 caractere (propunere)",
     "owner_id>profiles?|uuid|autorul, pentru proiecte proprii; gol la cărțile din catalog", "is_published|boolean|implicit false; doar cărțile publicate pot primi note/recenzii",
-    "isbn?|text|unic; ISBN-13 (13 cifre, începe cu 978 sau 979), validat cu cifra de control", "author_names|text[]|numele autorilor din catalog; implicit {}; inclus în căutarea „Aceasta e cartea?”", "publisher_name?|text|numele editurii din catalog; afișat ca text simplu când editura nu are o legătură confirmată în work_publishers (de exemplu, nu e pe Lisette)",
+    "isbn?|text|unic; ISBN-13 (13 cifre, începe cu 978 sau 979), validat cu cifra de control; îl scrie doar serverul (căutarea ISBN), niciodată aplicația", "author_names|text[]|numele autorilor din catalog; implicit {}; inclus în căutarea „Aceasta e cartea?”", "publisher_name?|text|numele editurii din catalog; afișat ca text simplu când editura nu are o legătură confirmată în work_publishers (de exemplu, nu e pe Lisette)",
     "language?|text|cod ISO 639-1, ex. ro", "genre_id>genres?|uuid|", "cover_path?|text|copertă în public-media",
-    "visibility|work_visibility|implicit private", "source|work_source|", "external_id?|text|ID-ul din Open Library", ...TSU],
+    "visibility|work_visibility|implicit private; cărțile din catalog (isbn_lookup, manual) se creează public, cu is_published = true", "source|work_source|", "external_id?|text|ID-ul din Open Library", ...TSU],
     "ISBN unic: o carte cu ISBN apare o singură dată. La adăugarea manuală, aplicația arată întâi cărțile asemănătoare („Aceasta e cartea?”); persoana alege una sau creează una nouă. Cărțile nu se unesc niciodată automat."),
   T("works", "work_authors", "public", "Legătura dintre o operă și autorii ei de pe Lisette. Nu se ghicește automat.", [
     "work_id*>works|uuid|", "author_id*>profiles|uuid|", "status|link_status|confirmed automat pentru propria operă; altfel pending"]),
@@ -482,7 +482,7 @@ const TABLES = [
     "excerpt_id*>excerpts|uuid|", "publisher_id*>publishers|uuid|", ...TS]),
 
   T("library", "library_entries", "setari", "O carte în biblioteca cuiva, pe un raft. Privată până o faci publică.", [
-    "user_id*>profiles|uuid|", "work_id*>works|uuid|", "shelf|shelf|implicit to_read", "is_public|boolean|implicit false",
+    "user_id*>profiles|uuid|", "work_id*>works|uuid|", "shelf|shelf|implicit to_read", "is_public|boolean|implicit false; doar pentru o operă publică; ascuns între conturi blocate",
     "is_inspiration|boolean|implicit false; apare la Inspirații pe profilul de autor", "added_at|timestamptz|implicit now()", "updated_at|timestamptz|"]),
   T("library", "ratings", "public", "Nota. Una per persoană per carte. Nu se afișează medie.", [
     "user_id*>profiles|uuid|", "work_id*>works|uuid|doar opere cu is_published = true", "value|smallint|număr întreg de la 1 la 5", "updated_at|timestamptz|"]),

@@ -41,7 +41,14 @@
           "backgroundColor": "#3A121C"
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Lisette uses the camera to scan the barcode of a book.",
+          "recordAudioAndroid": false
+        }
+      ]
     ]
   }
 }
