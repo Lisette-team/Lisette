@@ -82,7 +82,8 @@ describe("wide_screen_shell", () => {
 
     await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Manuscripts", "Profile"]));
     expect(screen.getByRole("tab", { name: "Home" })).toBeSelected();
-    expect(screen.getByRole("button", { name: "Create" })).toBeOnTheScreen();
+    // No global Create on wide screens: each page has its own action.
+    expect(screen.queryByRole("button", { name: "Create" })).toBeNull();
 
     await fireEvent.press(screen.getByRole("tab", { name: "Library" }));
     await waitFor(() => expect(app.getPathname()).toBe("/library"));
@@ -101,5 +102,39 @@ describe("wide_screen_shell", () => {
     await signedIn(false, "/settings");
 
     await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Profile"]));
+  });
+});
+
+describe("wide_screen_pages", () => {
+  test("Home shows the wordmark only once, and its own New post action", async () => {
+    mockWide = true;
+    const app = await signedIn(false);
+
+    await fireEvent.press(await screen.findByRole("button", { name: "New post" }));
+    await waitFor(() => expect(app.getPathname()).toBe("/create"));
+  });
+
+  test("the Lisette wordmark is not repeated in Home's header", async () => {
+    mockWide = true;
+    await signedIn(false);
+
+    await screen.findByRole("button", { name: "New post" });
+    expect(screen.getAllByText("Lisette")).toHaveLength(1);
+  });
+
+  test("the composer highlights no sidebar entry", async () => {
+    mockWide = true;
+    await signedIn(false, "/create");
+
+    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Profile"]));
+    for (const tab of screen.getAllByRole("tab")) expect(tab).not.toBeSelected();
+  });
+
+  test("phones keep the wordmark and the + button", async () => {
+    await signedIn(false);
+
+    expect(await screen.findByText("Lisette")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "New post" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Create" })).toBeOnTheScreen();
   });
 });
