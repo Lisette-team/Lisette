@@ -375,7 +375,6 @@
     "isbnUnavailable": "Looking up books by ISBN isn't working right now. You can add the book by hand.",
     "titleRequired": "Write the book's title.",
     "isbnInvalid": "This ISBN doesn't look right. Check the digits or leave it empty.",
-    "isbnTaken": "A book with this ISBN is already on Lisette. Save again to pick it.",
     "similarTitle": "Is this the book?",
     "similarBody": "Lisette already has similar books. Pick yours, or add it as a new book.",
     "newBook": "No, it's a new book",
@@ -398,7 +397,8 @@
     "isbnChecksum": "These digits don't form a valid ISBN. Check them.",
     "isbnValid": "Valid ISBN. You can leave the title empty: we'll look it up.",
     "readThisYear_one": "Read in {{year}}: {{count}} book",
-    "readThisYear_other": "Read in {{year}}: {{count}} books"
+    "readThisYear_other": "Read in {{year}}: {{count}} books",
+    "isbnHeld": "Book saved without the ISBN: it already belongs to the book we showed you."
   },
   "reviews": {
     "rate": "Your rating",

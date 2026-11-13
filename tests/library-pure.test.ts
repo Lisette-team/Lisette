@@ -54,6 +54,12 @@ describe("barcode classification", () => {
     expect(classifyBarcode("9786069999127")).toEqual({ kind: "isbn", isbn: "9786069999127" });
   });
 
+  test("an ISMN (9790, printed music) is not a book's ISBN", () => {
+    expect(classifyBarcode("9790060115615")).toEqual({ kind: "not_isbn" });
+    expect(isValidIsbn13("9790060115615")).toBe(false);
+    expect(toIsbn13("979-0-060-11561-5")).toBeNull();
+  });
+
   test("a 978/979 code with a wrong check digit could not be read", () => {
     expect(classifyBarcode("9780140328722")).toEqual({ kind: "unreadable" });
   });
@@ -103,7 +109,7 @@ describe("scanner gate", () => {
 
 describe("Open Library client", () => {
   test("the Edge Function accepts the same ISBN-13 as the app", () => {
-    for (const isbn of ["9780140328721", "9780140328722", "9770140328721", "978-0140328721"]) {
+    for (const isbn of ["9780140328721", "9780140328722", "9770140328721", "978-0140328721", "9790060115615"]) {
       expect(isIsbn13(isbn)).toBe(isValidIsbn13(isbn));
     }
   });

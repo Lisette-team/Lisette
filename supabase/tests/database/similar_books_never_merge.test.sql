@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(23);
 
 -- Ana is an author with a private project, Bogdan a reader, Revista Test a publisher.
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -14,11 +14,12 @@ insert into public.works (id, title, author_names, isbn, source, visibility, is_
   ('aaaaaaaa-0000-0000-0000-000000000001', 'Anotimpul cenușiu', array['Elena Dobre'], '9780140328721',
    'manual', 'public', true),
   ('aaaaaaaa-0000-0000-0000-000000000003', 'Grădina de sticlă', array['Ioana Mareș'], null, 'manual', 'public', true);
-insert into public.works (id, title, source, owner_id) values
-  ('aaaaaaaa-0000-0000-0000-000000000002', 'Anotimpul cenușiu (ciornă)', 'author', '11111111-1111-1111-1111-111111111111');
+insert into public.works (id, title, source, owner_id, isbn) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'Anotimpul cenușiu (ciornă)', 'author', '11111111-1111-1111-1111-111111111111',
+   '9786069999127');
 
 create temp table ids (name text primary key, id uuid) on commit drop;
-grant select, insert on ids to authenticated;
+grant select, insert on ids to authenticated, service_role;
 
 set local role authenticated;
 set local request.jwt.claims to '{"sub": "22222222-2222-2222-2222-222222222222", "role": "authenticated"}';
@@ -73,29 +74,71 @@ select results_eq(
 );
 
 select throws_ok(
-  $$ select public.create_catalogue_work('Alt titlu', array['Elena Dobre'], '9780140328721') $$,
-  '23505', null, 'an ISBN already on Lisette is not created twice'
-);
-select throws_ok(
-  $$ select public.create_catalogue_work('Alt titlu', array['Elena Dobre'], '9780140328722') $$,
-  '23514', null, 'an ISBN with a wrong check digit is refused'
-);
-select throws_ok(
   $$ select public.create_catalogue_work('   ', array['Elena Dobre']) $$,
   '23514', null, 'a book needs a title'
 );
-insert into ids select 'trimmed', public.create_catalogue_work(' Iarna lungă ', array[' Dan Ilie ', ''],
-  '978-0-306-40615-7');
+
+-- The ISBN of a manual book is set only by the isbn-lookup Edge Function (ruling 2026-11-13).
+select throws_ok(
+  $$ select public.create_catalogue_work('Alt titlu', array['Elena Dobre'], '9780306406157') $$,
+  '42883', null, 'a client cannot pass an ISBN when adding a book'
+);
+select throws_ok(
+  $$ select public.attach_isbn((select id from ids where name = 'new'), '9780306406157') $$,
+  '42501', null, 'a client cannot attach an ISBN'
+);
 select is(
-  (select w.isbn from public.works w join ids on ids.id = w.id where ids.name = 'trimmed'),
-  '9780306406157',
-  'a new book keeps a valid ISBN without hyphens'
+  (select array_agg(p.proname::text order by p.proname) from pg_proc p
+   where p.pronamespace = 'public'::regnamespace and 'isbn' = any(p.proargnames)
+     and has_function_privilege('authenticated', p.oid, 'execute')),
+  array['clean_isbn', 'is_valid_isbn13', 'lookup_isbn'],
+  'the only client functions that take an ISBN only read or check it'
 );
+update public.works set isbn = '9780306406157' where id = (select id from ids where name = 'new');
+select is(
+  (select isbn from public.works where id = (select id from ids where name = 'new')), null,
+  'a client cannot write an ISBN into a book directly'
+);
+
+insert into ids select 'trimmed', public.create_catalogue_work(' Iarna lungă ', array[' Dan Ilie ', '']);
 select results_eq(
-  $$ select title, author_names from public.works where isbn = '9780306406157' $$,
-  $$ values ('Iarna lungă', array['Dan Ilie']) $$,
-  'title and author names are trimmed and empty names dropped'
+  $$ select w.title, w.author_names, w.isbn from public.works w join ids on ids.id = w.id where ids.name = 'trimmed' $$,
+  $$ values ('Iarna lungă', array['Dan Ilie'], null::text) $$,
+  'title and author names are trimmed, empty names dropped, and there is no ISBN'
 );
+
+-- The Edge Function attaches an ISBN Open Library does not know, with the service role.
+set local role service_role;
+select is(
+  public.attach_isbn((select id from ids where name = 'trimmed'), '978-0-306-40615-7'), true,
+  'the server attaches a free ISBN to a new manual book'
+);
+select is(
+  (select w.isbn from public.works w join ids on ids.id = w.id where ids.name = 'trimmed'), '9780306406157',
+  'the ISBN is stored without hyphens'
+);
+select is(
+  public.attach_isbn((select id from ids where name = 'new'), '9780140328721'), false,
+  'an ISBN another public book holds is not attached'
+);
+select is(
+  public.attach_isbn((select id from ids where name = 'new'), '9786069999127'), false,
+  'an ISBN a private project holds is not attached either, with the same answer'
+);
+select is(
+  public.attach_isbn('aaaaaaaa-0000-0000-0000-000000000001', '9780804429573'), false,
+  'a book that already has an ISBN does not get another'
+);
+select throws_ok(
+  $$ select public.attach_isbn((select id from ids where name = 'new'), '9780140328722') $$,
+  '23514', null, 'an ISBN with a wrong check digit is refused'
+);
+select is(
+  (select isbn from public.works where id = (select id from ids where name = 'new')), null,
+  'the refused attempts leave the book without an ISBN'
+);
+reset role;
+set local role authenticated;
 
 set local request.jwt.claims to '{"sub": "33333333-3333-3333-3333-333333333333", "role": "authenticated"}';
 select throws_ok(

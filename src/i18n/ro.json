@@ -383,7 +383,6 @@
     "isbnUnavailable": "Căutarea după ISBN nu merge acum. Poți adăuga cartea manual.",
     "titleRequired": "Scrie titlul cărții.",
     "isbnInvalid": "Acest ISBN nu pare corect. Verifică cifrele sau lasă câmpul gol.",
-    "isbnTaken": "O carte cu acest ISBN e deja pe Lisette. Încearcă din nou ca să o alegi.",
     "similarTitle": "Asta e cartea?",
     "similarBody": "Pe Lisette există deja cărți asemănătoare. Alege-o pe a ta sau adaug-o ca pe o carte nouă.",
     "newBook": "Nu, e o carte nouă",
@@ -408,7 +407,8 @@
     "isbnValid": "ISBN valid. Poți lăsa titlul gol: îl căutăm noi.",
     "readThisYear_one": "Citite în {{year}}: {{count}} carte",
     "readThisYear_few": "Citite în {{year}}: {{count}} cărți",
-    "readThisYear_other": "Citite în {{year}}: {{count}} de cărți"
+    "readThisYear_other": "Citite în {{year}}: {{count}} de cărți",
+    "isbnHeld": "Am salvat cartea fără ISBN: acest ISBN e deja al cărții pe care ți-am arătat-o."
   },
   "reviews": {
     "rate": "Nota ta",

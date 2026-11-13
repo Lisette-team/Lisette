@@ -22,7 +22,8 @@ type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
 const FIELDS = "key,title,author_name,editions,editions.key,editions.title,editions.publisher";
 
 export function isIsbn13(isbn: string): boolean {
-  if (!/^97[89][0-9]{10}$/.test(isbn)) return false;
+  // Bookland: 978, or 979 followed by 1-9. 9790 is the ISMN range (printed music), not books.
+  if (!/^(978[0-9]|979[1-9])[0-9]{9}$/.test(isbn)) return false;
   const sum = [...isbn].reduce((total, digit, i) => total + Number(digit) * (i % 2 === 0 ? 1 : 3), 0);
   return sum % 10 === 0;
 }

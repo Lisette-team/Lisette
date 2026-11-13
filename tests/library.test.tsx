@@ -53,6 +53,7 @@ jest.mock("@/features/library/api", () => ({
   lookupIsbn: jest.fn(),
   findSimilarWorks: jest.fn(),
   createCatalogueWork: jest.fn(),
+  createWithIsbn: jest.fn(),
   saveBook: jest.fn(),
   setEntryPublic: jest.fn(),
   setInspiration: jest.fn(),
@@ -95,6 +96,7 @@ beforeEach(() => {
   api.getBook.mockResolvedValue(FOX);
   api.findSimilarWorks.mockResolvedValue([]);
   api.createCatalogueWork.mockResolvedValue("w-new");
+  api.createWithIsbn.mockResolvedValue({ status: "created", workId: "w-new", isbnKept: true });
   api.saveBook.mockResolvedValue(undefined);
   api.setEntryPublic.mockResolvedValue(undefined);
   api.setInspiration.mockResolvedValue(undefined);
@@ -433,7 +435,7 @@ describe("similar_books_never_merge", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(api.findSimilarWorks).toHaveBeenCalledWith("Anotimpul cenușiu", "Elena Dobre"));
-    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Anotimpul cenușiu", ["Elena Dobre"], null));
+    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Anotimpul cenușiu", ["Elena Dobre"]));
     await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-new", "reading"));
     await waitFor(() => expect(app.getPathname()).toBe("/library"));
   });
@@ -458,7 +460,7 @@ describe("similar_books_never_merge", () => {
 
     await fireEvent.press(await screen.findByRole("button", { name: "No, it's a new book" }));
 
-    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Anotimpul cenușiu", ["Elena Dobre"], null));
+    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Anotimpul cenușiu", ["Elena Dobre"]));
     await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-new", "to_read"));
     expect(api.saveBook).not.toHaveBeenCalledWith("w-old", expect.anything());
   });
@@ -483,17 +485,45 @@ describe("similar_books_never_merge", () => {
     await fillManualAdd("Iarna lungă", "Dan Ilie", "978-0-306-40615-7");
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() =>
-      expect(api.createCatalogueWork).toHaveBeenCalledWith("Iarna lungă", ["Dan Ilie"], "9780306406157"),
-    );
+    // The server checks the ISBN again and attaches it; the app never sends it with the book.
+    await waitFor(() => expect(api.createWithIsbn).toHaveBeenCalledWith("9780306406157", "Iarna lungă", ["Dan Ilie"]));
+    await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-new", "to_read"));
+    expect(api.createCatalogueWork).not.toHaveBeenCalled();
+  });
+
+  test("a book found by the server at the last moment is offered instead of created", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "not_found" });
+    api.createWithIsbn.mockResolvedValue({ status: "found", work: FOX });
+    await fillManualAdd("Mr Fox", "Dahl", "9780140328721");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByRole("button", { name: "Fantastic Mr Fox, Roald Dahl" })).toBeOnTheScreen();
+    expect(api.saveBook).not.toHaveBeenCalled();
+  });
+
+  test("choosing a new book over the one found by its ISBN saves it without the ISBN, and says why", async () => {
+    api.lookupIsbn.mockResolvedValue({ status: "found", work: FOX });
+    const app = await fillManualAdd("Mr Fox", "Dahl", "9780140328721");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+
+    await fireEvent.press(await screen.findByRole("button", { name: "No, it's a new book" }));
+
+    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Mr Fox", ["Dahl"]));
+    expect(api.createWithIsbn).not.toHaveBeenCalled();
+    await waitFor(() => expect(app.getPathname()).toBe("/library"));
+    expect(
+      await screen.findByText("Book saved without the ISBN: it already belongs to the book we showed you."),
+    ).toBeOnTheScreen();
   });
 
   test("when the ISBN cannot be checked, the book is saved without it and the person is told", async () => {
     api.lookupIsbn.mockResolvedValue({ status: "unavailable" });
+    api.createWithIsbn.mockResolvedValue({ status: "created", workId: "w-new", isbnKept: false });
     const app = await fillManualAdd("Iarna lungă", "Dan Ilie", "9780306406157");
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
-    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Iarna lungă", ["Dan Ilie"], null));
+    await waitFor(() => expect(api.createWithIsbn).toHaveBeenCalledWith("9780306406157", "Iarna lungă", ["Dan Ilie"]));
+    await waitFor(() => expect(api.saveBook).toHaveBeenCalledWith("w-new", "to_read"));
     await waitFor(() => expect(app.getPathname()).toBe("/library"));
     expect(
       await screen.findByText("Book saved without its ISBN, because we couldn't check it right now."),
@@ -507,7 +537,7 @@ describe("similar_books_never_merge", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(api.lookupIsbn).toHaveBeenCalledWith("9780306406157"));
-    await waitFor(() => expect(api.createCatalogueWork).toHaveBeenCalledWith("Iarna lungă", [], "9780306406157"));
+    await waitFor(() => expect(api.createWithIsbn).toHaveBeenCalledWith("9780306406157", "Iarna lungă", []));
     await waitFor(() => expect(app.getPathname()).toBe("/library"));
   });
 

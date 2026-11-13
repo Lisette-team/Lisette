@@ -177,10 +177,12 @@ export default function Library() {
 
   const notices = (
     <>
-      {params.saved === "withoutIsbn" ? (
+      {params.saved === "withoutIsbn" || params.saved === "isbnHeld" ? (
         <View style={styles.notice}>
           <Icon name="alert" color={colors.burgundy} size={20} />
-          <Text style={styles.noticeText}>{t("library.savedWithoutIsbn")}</Text>
+          <Text style={styles.noticeText}>
+            {t(params.saved === "isbnHeld" ? "library.isbnHeld" : "library.savedWithoutIsbn")}
+          </Text>
         </View>
       ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}

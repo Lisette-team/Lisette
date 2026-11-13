@@ -107,11 +107,23 @@ export async function findSimilarWorks(title: string, author: string | null): Pr
   return (data ?? []) as Book[];
 }
 
-// Always a new, separate book; nothing is merged.
-export async function createCatalogueWork(title: string, authors: string[], isbn: string | null): Promise<string> {
-  const { data, error } = await supabase.rpc("create_catalogue_work", { title, authors, isbn });
+// Always a new, separate book, without an ISBN; nothing is merged.
+export async function createCatalogueWork(title: string, authors: string[]): Promise<string> {
+  const { data, error } = await supabase.rpc("create_catalogue_work", { title, authors });
   if (error) throw error;
   return data as string;
+}
+
+export type CreateWithIsbn = { status: "found"; work: Book } | { status: "created"; workId: string; isbnKept: boolean };
+
+// A new book with a typed ISBN, through the isbn-lookup Edge Function: it checks the ISBN again and
+// attaches it only when Open Library has no record and no other book holds it (isbnKept).
+export async function createWithIsbn(isbn: string, title: string, authors: string[]): Promise<CreateWithIsbn> {
+  const { data, error } = await supabase.functions.invoke("isbn-lookup", {
+    body: { isbn, title, authors, create: true },
+  });
+  if (error || !data?.status) throw error ?? new Error("isbn-lookup create failed");
+  return data as CreateWithIsbn;
 }
 
 export async function saveBook(workId: string, shelf: Shelf): Promise<void> {

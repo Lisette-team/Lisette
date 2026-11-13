@@ -89,8 +89,9 @@ language sql stable set search_path = '' as $$
   limit 5;
 $$;
 
--- "New book": always a separate work, even when a similar one exists. Person accounts only.
-create function public.create_catalogue_work(title text, authors text[], isbn text default null) returns uuid
+-- "New book": always a separate work, even when a similar one exists. Person accounts only. It never
+-- takes an ISBN: only the isbn-lookup Edge Function sets one, through attach_isbn (ruling 2026-11-13).
+create function public.create_catalogue_work(title text, authors text[]) returns uuid
 language plpgsql security definer set search_path = '' as $$
 declare
   new_id uuid;
@@ -98,14 +99,31 @@ begin
   if not exists (select 1 from public.profiles p where p.id = auth.uid()) then
     raise exception 'only a person account adds books' using errcode = '42501';
   end if;
-  insert into public.works (title, author_names, isbn, source, visibility, is_published)
+  insert into public.works (title, author_names, source, visibility, is_published)
   values (btrim(create_catalogue_work.title),
           array(select btrim(n) from unnest(create_catalogue_work.authors) n where btrim(n) <> ''),
-          public.clean_isbn(create_catalogue_work.isbn), 'manual', 'public', true)
+          'manual', 'public', true)
   returning id into new_id;
   return new_id;
 end;
 $$;
+
+-- Service role only (the isbn-lookup Edge Function, after Open Library answered "no record"): gives a
+-- manual book without an ISBN its ISBN. False when the ISBN is already held by any book, public or
+-- private, or the book is not such a manual book; the caller answers the same either way, so nobody
+-- learns that a private work holds the ISBN.
+create function public.attach_isbn(work_id uuid, isbn text) returns boolean
+language plpgsql security definer set search_path = '' as $$
+begin
+  update public.works w set isbn = public.clean_isbn(attach_isbn.isbn)
+  where w.id = attach_isbn.work_id and w.source = 'manual' and w.owner_id is null and w.isbn is null;
+  return found;
+exception when unique_violation then
+  return false;
+end;
+$$;
+revoke execute on function public.attach_isbn(uuid, text) from public, anon, authenticated;
+grant execute on function public.attach_isbn(uuid, text) to service_role;
 
 -- Adds a book to a shelf, or moves it: one entry per person and book. A new entry is private.
 create function public.save_book(work_id uuid, shelf public.shelf) returns void

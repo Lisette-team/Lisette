@@ -23,14 +23,19 @@ Sources: https://openlibrary.org/developers/api and https://openlibrary.org/dev/
 - `OPEN_LIBRARY_URL` can point the function at a stand-in server. It is not set normally.
 - Tests never call the live API. The parser and client are tested with recorded answers in `tests/fixtures/open-library-search-*.json`, which were recorded once by hand on 2026-11-12, and with fake fetches (timeout, 503, network down). The gateway test only uses cached ISBNs and refused requests.
 
-## Typed ISBNs on manual add (fix round 1, 2026-11-12)
+## Typed ISBNs on manual add (rounds 1 and 3, 2026-11-12 and 2026-11-13)
 
-- A valid ISBN typed on manual add, or filled in after a scan, goes through `isbn-lookup` first, as a scan does.
-  - `found`: the "Is this the book?" sheet offers that book next to similar titles.
-  - `not_found`: Open Library has no record, so a new book may keep the ISBN.
-  - `unavailable`: the new book is created **without** the ISBN, so the slot stays free for a verified lookup later. The library then says "Book saved without its ISBN, because we couldn't check it right now."
-- This rule lives in the app. `create_catalogue_work` still accepts an ISBN, so a client calling the RPC directly could claim an ISBN without a lookup. Enforcing it in the database would need a record of the ISBNs the server has seen as not found: a new table, which is a schema change for the team to agree on.
-- `cache_isbn_work` returns null when the row holding the ISBN is not public. The function then answers `unavailable`, and the service role never hands a private work back to the caller.
+- Only the server sets the ISBN of a manual book. `create_catalogue_work(title, authors)` takes no ISBN, the service-role-only `attach_isbn` is the one write path, and no client function that takes an ISBN can write it. A pgTAP test checks this through `pg_proc` and a direct update.
+- A valid ISBN typed on manual add, or filled in after a scan, is first looked up as a scan is. `found`: the "Is this the book?" sheet offers that book. If the person still chooses "No, it's a new book", the new book is created without the ISBN, and the library says it already belongs to the book offered.
+- Creating a book with an ISBN goes through `isbn-lookup` with `{isbn, title, authors, create: true}`. The function checks the cache and Open Library again:
+  - `found`: returns the book, and the app offers it.
+  - `not_found`: creates the manual book as the caller, then attaches the ISBN with `attach_isbn`.
+  - `unavailable`, or any conflict on the ISBN (including a private work the caller cannot see): creates the book without the ISBN.
+
+  The last two give the same answer, `{status: "created", workId, isbnKept: false}`, so the response never reveals that a private work holds the ISBN.
+- `cache_isbn_work` returns null when the row holding the ISBN is not public. The lookup then answers `unavailable`.
+- An ISMN (9790…, printed music) is not accepted as an ISBN by the app or the Edge Function. The database's `is_valid_isbn13` (01.3, shared `works`) still accepts it; changing it needs both streams to agree.
+- Gateway test seam: the headers `x-lisette-open-library-url` and `x-lisette-service-key` point the function at a stub Open Library. They take effect only when the key equals the service role key, which only the server and local test setups hold. `tests/gateway/isbn_create.test.ts` uses them with a stub served from the test process (`host.docker.internal`).
 
 ## Known gaps
 
