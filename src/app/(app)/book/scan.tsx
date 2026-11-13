@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Linking, Platform, StyleSheet, Text, View } from "react-native";
 
 import { lookupIsbn } from "@/features/library/api";
-import { toIsbn13 } from "@/features/library/isbn";
+import { classifyBarcode } from "@/features/library/isbn";
 import { createScanGate } from "@/features/library/scan-gate";
 import { Button } from "@/ui/button";
 import { FanLoader } from "@/ui/fan-loader";
@@ -16,7 +16,11 @@ import { colors, fonts, radius, space } from "@/ui/theme";
 
 const THOUGHTFUL = require("../../../../assets/illustrations/semn-ganduri.svg");
 
-type Phase = "scanning" | "failed" | "looking";
+// failed: a book code that could not be read; notBook: a readable product code that is not an ISBN.
+type Phase = "scanning" | "failed" | "notBook" | "looking";
+
+// Books carry EAN-13; the other product formats are read too, so the scanner can say it is not a book.
+const BARCODE_TYPES = ["ean13", "ean8", "upc_a", "upc_e"] as const;
 
 // S-61: ISBN scanner. Android camera only; the web adds books by hand.
 export default function Scan() {
@@ -53,11 +57,12 @@ function Scanner() {
   function onScanned({ data }: BarcodeScanningResult) {
     // The camera reports the same code many times a second: only the first one counts.
     if (!gate.accept(data)) return;
-    const code = toIsbn13(data);
-    if (!code) {
-      setPhase("failed");
+    const read = classifyBarcode(data);
+    if (read.kind !== "isbn") {
+      setPhase(read.kind === "not_isbn" ? "notBook" : "failed");
       return;
     }
+    const code = read.isbn;
     setIsbn(code);
     setPhase("looking");
     lookupIsbn(code).then((result) => {
@@ -121,7 +126,7 @@ function Scanner() {
     );
   }
 
-  const failed = phase === "failed";
+  const failed = phase === "failed" || phase === "notBook";
   return (
     <Screen
       title={t("library.scan")}
@@ -140,14 +145,14 @@ function Scanner() {
       {failed ? (
         <View style={styles.failed} accessibilityRole="alert">
           <Icon name="alert" color={colors.burgundy} size={24} />
-          <Text style={styles.failedText}>{t("library.scanFailed")}</Text>
+          <Text style={styles.failedText}>{t(phase === "notBook" ? "library.notBookBarcode" : "library.scanFailed")}</Text>
         </View>
       ) : null}
       <View style={styles.viewfinder}>
         <CameraView
           style={StyleSheet.absoluteFill}
           facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ["ean13"] }}
+          barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
           onBarcodeScanned={onScanned}
         />
         <View style={[styles.corner, styles.topLeft]} />

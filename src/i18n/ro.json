@@ -401,7 +401,14 @@
     "readSummary_few": "{{count}} cărți în {{year}}, ultima pe {{date}}",
     "readSummary_other": "{{count}} de cărți în {{year}}, ultima pe {{date}}",
     "readSummaryNone": "Nicio carte terminată încă în {{year}}",
-    "readCardLabel": "Citite. {{summary}}"
+    "readCardLabel": "Citite. {{summary}}",
+    "notBookBarcode": "Acesta nu e codul ISBN al unei cărți. Caută codul de bare care începe cu 978 sau 979, de obicei pe coperta a patra.",
+    "isbnUnavailableTitle": "Nu am putut verifica ISBN-ul acum. Scrie titlul ca să adaugi cartea.",
+    "isbnChecksum": "Cifrele nu formează un ISBN valid. Verifică-le.",
+    "isbnValid": "ISBN valid. Poți lăsa titlul gol: îl căutăm noi.",
+    "readThisYear_one": "Citite în {{year}}: {{count}} carte",
+    "readThisYear_few": "Citite în {{year}}: {{count}} cărți",
+    "readThisYear_other": "Citite în {{year}}: {{count}} de cărți"
   },
   "reviews": {
     "rate": "Nota ta",

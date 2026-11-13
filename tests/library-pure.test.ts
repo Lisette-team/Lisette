@@ -1,7 +1,9 @@
 // Pure parts of the library: ISBN checks, the scanner gate and the Open Library client. The client is
 // tested with recorded responses (tests/fixtures) and fake fetches; no test calls the live API.
 import { createScanGate } from "@/features/library/scan-gate";
-import { isValidIsbn10, isValidIsbn13, toIsbn13 } from "@/features/library/isbn";
+import { classifyBarcode, isValidIsbn10, isValidIsbn13, toIsbn13 } from "@/features/library/isbn";
+import { colors } from "@/ui/theme";
+import { toggleColors } from "@/ui/toggle";
 
 import { isIsbn13, lookupOpenLibrary, parseSearch } from "../supabase/functions/_shared/open-library";
 import found from "./fixtures/open-library-search-found.json";
@@ -43,6 +45,43 @@ describe("ISBN checksums", () => {
     expect(toIsbn13("978-0-14-032872-2")).toBeNull();
     expect(toIsbn13("0140328727")).toBeNull();
     expect(toIsbn13("4006381333931")).toBeNull();
+  });
+});
+
+describe("barcode classification", () => {
+  test("a book code with a valid check digit is an ISBN", () => {
+    expect(classifyBarcode("9780140328721")).toEqual({ kind: "isbn", isbn: "9780140328721" });
+    expect(classifyBarcode("9786069999127")).toEqual({ kind: "isbn", isbn: "9786069999127" });
+  });
+
+  test("a 978/979 code with a wrong check digit could not be read", () => {
+    expect(classifyBarcode("9780140328722")).toEqual({ kind: "unreadable" });
+  });
+
+  test.each([
+    ["4006381333931", "EAN-13 outside the book range"],
+    ["0036000291452", "UPC-A read as EAN-13"],
+    ["96385074", "EAN-8"],
+    ["036000291452", "UPC-A"],
+    ["04252614", "UPC-E"],
+    ["425261", "UPC-E without system digit"],
+  ])("%s is a product code, not an ISBN (%s)", (code) => {
+    expect(classifyBarcode(code)).toEqual({ kind: "not_isbn" });
+  });
+
+  test("anything else could not be read", () => {
+    expect(classifyBarcode("")).toEqual({ kind: "unreadable" });
+    expect(classifyBarcode("ABC123")).toEqual({ kind: "unreadable" });
+    expect(classifyBarcode("12345")).toEqual({ kind: "unreadable" });
+  });
+});
+
+describe("switch colours", () => {
+  test("the off state has a visible track and thumb on light sheets, on every platform", () => {
+    expect(toggleColors.trackColor.false).toBe(colors.line);
+    expect(toggleColors.ios_backgroundColor).toBe(colors.line);
+    expect(toggleColors.trackColor.true).toBe(colors.burgundy);
+    expect(toggleColors.thumbColor).toBe(colors.paper);
   });
 });
 

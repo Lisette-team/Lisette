@@ -93,6 +93,11 @@ export default function AddBook() {
 
   async function createNew() {
     setMatches(null);
+    // Reached from an ISBN-only lookup: a new book needs its title first.
+    if (!title.trim()) {
+      setError(t("library.titleRequired"));
+      return;
+    }
     await attempt(() => create(newIsbn, isbnDropped));
   }
 
@@ -113,13 +118,27 @@ export default function AddBook() {
       });
       return;
     }
-    if (!title.trim()) {
+    const code = isbn.trim() ? toIsbn13(isbn) : null;
+    if (!title.trim() && !code) {
       setError(t("library.titleRequired"));
       return;
     }
-    const code = isbn.trim() ? toIsbn13(isbn) : null;
     if (isbn.trim() && !code) {
       setError(t("library.isbnInvalid"));
+      return;
+    }
+    if (!title.trim() && code) {
+      // Only an ISBN: offer the book it names, or ask for the title. A title is never made up.
+      await attempt(async () => {
+        const lookup = await lookupIsbn(code);
+        if (lookup.status === "found") {
+          setNewIsbn(null);
+          setIsbnDropped(false);
+          setMatches([lookup.work]);
+        } else {
+          setError(t(lookup.status === "not_found" ? "library.isbnNotFound" : "library.isbnUnavailableTitle"));
+        }
+      });
       return;
     }
     await attempt(async () => {
@@ -140,6 +159,14 @@ export default function AddBook() {
       }
     });
   }
+
+  // Said as soon as the digits are complete (10 or 13), not while the person is still typing.
+  const typedDigits = isbn.replace(/[\s-]/g, "").length;
+  const isbnHint = toIsbn13(isbn)
+    ? "library.isbnValid"
+    : typedDigits === 10 || typedDigits === 13
+      ? "library.isbnChecksum"
+      : null;
 
   const preview = book ?? (title.trim() ? { title: title.trim(), authorNames: authors } : null);
   const notice =
@@ -168,6 +195,7 @@ export default function AddBook() {
             onChangeText={setIsbn}
             keyboardType="numbers-and-punctuation"
             autoCapitalize="characters"
+            hint={isbnHint ? t(isbnHint) : undefined}
           />
         </>
       )}

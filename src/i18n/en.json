@@ -392,7 +392,13 @@
     "readSummary_one": "{{count}} book in {{year}}, the last on {{date}}",
     "readSummary_other": "{{count}} books in {{year}}, the last on {{date}}",
     "readSummaryNone": "None finished yet in {{year}}",
-    "readCardLabel": "Read. {{summary}}"
+    "readCardLabel": "Read. {{summary}}",
+    "notBookBarcode": "This isn't a book's ISBN. Look for the barcode that starts with 978 or 979, usually on the back cover.",
+    "isbnUnavailableTitle": "We couldn't check the ISBN right now. Write the title to add the book.",
+    "isbnChecksum": "These digits don't form a valid ISBN. Check them.",
+    "isbnValid": "Valid ISBN. You can leave the title empty: we'll look it up.",
+    "readThisYear_one": "Read in {{year}}: {{count}} book",
+    "readThisYear_other": "Read in {{year}}: {{count}} books"
   },
   "reviews": {
     "rate": "Your rating",

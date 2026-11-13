@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/ui/button";
 import { ErrorText } from "@/ui/screen";
 import { colors, fonts, radius, space } from "@/ui/theme";
+import { Toggle } from "@/ui/toggle";
 
 import type { LibraryEntry, Shelf } from "./api";
 import { BookCover, ShelfChips, authorLine } from "./parts";
@@ -49,12 +50,10 @@ export function EntrySheet({ entry, author, error, onClose, onShelf, onPublic, o
                   {t(entry.isPublic ? "library.showOnProfileOn" : "library.showOnProfileOff")}
                 </Text>
               </View>
-              <Switch
+              <Toggle
                 accessibilityLabel={t("library.showOnProfile")}
                 value={entry.isPublic}
                 onValueChange={(value) => onPublic(entry, value)}
-                trackColor={{ true: colors.burgundy, false: colors.line }}
-                thumbColor={colors.field}
               />
             </View>
 
@@ -64,12 +63,10 @@ export function EntrySheet({ entry, author, error, onClose, onShelf, onPublic, o
                   <Text style={styles.label}>{t("library.inspiration")}</Text>
                   <Text style={styles.muted}>{t("library.inspirationHint")}</Text>
                 </View>
-                <Switch
+                <Toggle
                   accessibilityLabel={t("library.inspiration")}
                   value={entry.isInspiration}
                   onValueChange={(value) => onInspiration(entry, value)}
-                  trackColor={{ true: colors.burgundy, false: colors.line }}
-                  thumbColor={colors.field}
                 />
               </View>
             ) : null}

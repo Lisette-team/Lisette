@@ -23,3 +23,14 @@ export function toIsbn13(input: string): string | null {
   const sum = [...body].reduce((total, digit, i) => total + Number(digit) * (i % 2 === 0 ? 1 : 3), 0);
   return `${body}${(10 - (sum % 10)) % 10}`;
 }
+
+export type BarcodeKind = { kind: "isbn"; isbn: string } | { kind: "not_isbn" } | { kind: "unreadable" };
+
+// What the scanner read. Books carry an EAN-13 starting 978 or 979; a 978/979 code whose check digit
+// fails was misread. Any other EAN-13, EAN-8, UPC-A or UPC-E is a product code, not a book's ISBN.
+export function classifyBarcode(data: string): BarcodeKind {
+  const code = data.trim();
+  if (/^97[89][0-9]{10}$/.test(code)) return isValidIsbn13(code) ? { kind: "isbn", isbn: code } : { kind: "unreadable" };
+  if (/^[0-9]{13}$/.test(code) || /^[0-9]{12}$/.test(code) || /^[0-9]{6,8}$/.test(code)) return { kind: "not_isbn" };
+  return { kind: "unreadable" };
+}
