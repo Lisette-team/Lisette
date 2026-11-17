@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <path id="p0" d="M41 16 H79 Q87 16 87 24 V108 L60 93 L33 108 V24 Q33 16 41 16 Z" fill="#7A2233"/>
+  <path id="p1" d="M39 38 V100.667" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p2" d="M44 38 V97.8889" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p3" d="M49 38 V95.1111" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p4" d="M54 38 V92.3333" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p5" d="M59 38 V89.5556" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p6" d="M64 38 V91.2222" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p7" d="M69 38 V94" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p8" d="M74 38 V96.7778" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p9" d="M79 38 V99.5556" fill="none" stroke="#8A2C3E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+  <path id="p10" d="M79 16 Q87 16 87 24 V108 L80 104 V24 Q80 18 79 16 Z" fill="#5F1A28" opacity="0.55"/>
+  <path id="p11" d="M38.5 40 V99" fill="none" stroke="#C99A4E" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.5 2.5" opacity="0.7"/>
+  <path id="p12" d="M81.5 40 V99.5" fill="none" stroke="#C99A4E" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2.5 2.5" opacity="0.7"/>
+  <path id="p13" d="M38 22 Q36.5 25 37 30" fill="none" stroke="#F6EFE3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+  <path id="p14" d="M41 16 H79 Q87 16 87 24 V108 L60 93 L33 108 V24 Q33 16 41 16 Z" fill="none" stroke="#2E1F1A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p15" d="M33 29 H87 M33 34.5 H87" fill="none" stroke="#C99A4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p16" d="M60 16 C61 6 80 2 92 8.5" fill="none" stroke="#C99A4E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p17" d="M60.5 15 C62 7 79 3.5 91 9" fill="none" stroke="#5F1A28" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  <path id="p18" d="M89.7 8.5 H95.3 Q97.5 8.5 97.5 10.7 V12.3 Q97.5 14.5 95.3 14.5 H89.7 Q87.5 14.5 87.5 12.3 V10.7 Q87.5 8.5 89.7 8.5 Z" fill="#C99A4E" stroke="#2E1F1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p19" d="M88 11.5 H97" fill="none" stroke="#2E1F1A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  <path id="p20" d="M89 14.5 L87.5 27 M91 14.5 L90.5 28 M93 14.5 L93 28.5 M95 14.5 L95.5 28 M97 14.5 L98.5 27" fill="none" stroke="#C99A4E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p21" d="M90 14.5 L89.5 26 M94 14.5 L94.5 27.5" fill="none" stroke="#5F1A28" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <path id="p22" d="M46 46 L55 44" fill="none" stroke="#F6EFE3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p23" d="M74 46 L65 44" fill="none" stroke="#F6EFE3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="p24" d="M46.8 55 a4.2 5.2 0 1 0 8.4 0 a4.2 5.2 0 1 0 -8.4 0 Z" fill="#F6EFE3"/>
+  <path id="p25" d="M49.7 57 a2.1 2.5 0 1 0 4.2 0 a2.1 2.5 0 1 0 -4.2 0 Z" fill="#2E1F1A"/>
+  <path id="p26" d="M51.85 55.9 a0.75 0.75 0 1 0 1.5 0 a0.75 0.75 0 1 0 -1.5 0 Z" fill="#F6EFE3"/>
+  <path id="p27" d="M64.8 55 a4.2 5.2 0 1 0 8.4 0 a4.2 5.2 0 1 0 -8.4 0 Z" fill="#F6EFE3"/>
+  <path id="p28" d="M67.7 57 a2.1 2.5 0 1 0 4.2 0 a2.1 2.5 0 1 0 -4.2 0 Z" fill="#2E1F1A"/>
+  <path id="p29" d="M69.85 55.9 a0.75 0.75 0 1 0 1.5 0 a0.75 0.75 0 1 0 -1.5 0 Z" fill="#F6EFE3"/>
+  <path id="p30" d="M39.4 64 a3.6 2.2 0 1 0 7.2 0 a3.6 2.2 0 1 0 -7.2 0 Z" fill="#C99A4E" opacity="0.6"/>
+  <path id="p31" d="M73.4 64 a3.6 2.2 0 1 0 7.2 0 a3.6 2.2 0 1 0 -7.2 0 Z" fill="#C99A4E" opacity="0.6"/>
+  <path id="p32" d="M56 68 Q60 64.5 64 68" fill="none" stroke="#F6EFE3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

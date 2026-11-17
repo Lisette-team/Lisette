@@ -32,6 +32,8 @@ yarn-error.*
 
 # local env files
 .env*.local
+# Edge Function settings for the local stack (the gateway tests' Open Library stub)
+supabase/functions/.env
 
 # typescript
 *.tsbuildinfo

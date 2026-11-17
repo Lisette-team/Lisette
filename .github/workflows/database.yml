@@ -19,6 +19,9 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.121.0
+      # The Edge Functions ask a stub Open Library that tests/gateway/isbn_create.test.ts serves on the
+      # runner, never the live API. The CLI loads this git-ignored file into the Edge Runtime.
+      - run: echo "OPEN_LIBRARY_URL=http://host.docker.internal:54399" > supabase/functions/.env
       # Starts the containers the tests use (Postgres, Auth, Storage, REST, Edge Functions and the API
       # gateway) with config.toml and applies every migration from scratch: the clean rebuild check.
       # Dashboard, realtime, mail, image and logging containers are not needed and slow the start.
