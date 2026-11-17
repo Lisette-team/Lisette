@@ -50,3 +50,17 @@ Automated checks on 2026-11-11 (Claude): typecheck, lint, 61 app tests, 153 SQL 
 6. The result shows both as Sent. Sending the same version to the same call again is refused with "Already in review with this work."
 7. On Android, open "Preview the PDF you're sending" from review and press back: the preview closes and review is still there.
 8. Write the result in the table above.
+
+
+## Manuscripts screens manual check
+
+| Platform | Device | Result | Date, by |
+|---|---|---|---|
+| Web | _to test_ | _to test_ | _to test_ |
+| Android (Expo Go) | _to test_ | _to test_ | _to test_ |
+
+1. Upload a new manuscript and then a second version.
+2. Star it, set v1 as main, and start a send: the calls step opens without a version question.
+3. Clear the main version and start a send: choose a version first.
+4. Delete an unsent version, then try to delete a sent version; the latter must remain unavailable.
+5. Open Submissions and check the publication, call and status.

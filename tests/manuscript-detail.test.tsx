@@ -1,0 +1,21 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import Detail from "@/app/(app)/manuscript/[workId]";
+import * as api from "@/features/manuscripts/api";
+import i18n from "@/i18n";
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({ router: { push: mockPush, back: jest.fn(), canGoBack: () => false }, useLocalSearchParams: () => ({ workId: "work" }), useFocusEffect: (fn: () => void) => require("react").useEffect(fn, [fn]) }));
+jest.mock("@/features/account/session", () => ({ useSession: () => ({ userId: "user", authorEnabled: true }) }));
+jest.mock("@/features/manuscripts/api");
+const mockApi = jest.mocked(api);
+beforeAll(() => i18n.changeLanguage("en"));
+beforeEach(() => { jest.clearAllMocks(); require("expo-router").router.push = mockPush; mockApi.listWorks.mockResolvedValue([{ id: "work", title: "Roman", is_starred: false, main_version_id: "v1", versions: [{ id: "v2", label: "draft", page_count: 4, uploaded_at: "2026-10-14", sent: false }, { id: "v1", label: null, page_count: 3, uploaded_at: "2026-10-01", sent: true }] }]); mockApi.setMainVersion.mockResolvedValue(); mockApi.deleteVersion.mockResolvedValue(); });
+test("main badge and choosing another main", async () => { await render(<Detail />); expect(await screen.findByText("Main")).toBeOnTheScreen(); await fireEvent.press(screen.getAllByRole("button", { name: "More options" })[0]); await fireEvent.press(screen.getByRole("button", { name: "Use for submissions" })); await waitFor(() => expect(mockApi.setMainVersion).toHaveBeenCalledWith("work", "v2")); });
+test("sent version cannot be deleted; unsent one requires confirmation", async () => { await render(<Detail />); await screen.findByText("Main"); await fireEvent.press(screen.getAllByRole("button", { name: "More options" })[1]); expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled(); await fireEvent.press(screen.getByLabelText("Cancel")); await fireEvent.press(screen.getAllByRole("button", { name: "More options" })[0]); await fireEvent.press(screen.getByRole("button", { name: "Delete" })); await fireEvent.press(screen.getByRole("button", { name: "Delete" })); await waitFor(() => expect(mockApi.deleteVersion).toHaveBeenCalledWith("v2")); });
+test("upload new version opens upload screen", async () => { await render(<Detail />); await fireEvent.press(await screen.findByRole("button", { name: "Upload a new version" })); expect(mockPush).toHaveBeenCalledWith("/upload?workId=work"); });
+test("the version tree shows the work once and opens the chosen branch", async () => {
+  await render(<Detail />);
+  expect(await screen.findByText("Roman")).toBeOnTheScreen();
+  expect(screen.getAllByText("Roman")).toHaveLength(1);
+  await fireEvent.press(screen.getByRole("button", { name: /Version 2 · 4 p/ }));
+  expect(mockPush).toHaveBeenCalledWith("/reader/v2");
+});

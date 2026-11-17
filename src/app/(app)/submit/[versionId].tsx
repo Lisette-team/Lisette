@@ -25,7 +25,7 @@ import { supabase } from "@/lib/supabase";
 import { Banner } from "@/ui/banner";
 import { Button } from "@/ui/button";
 import { Checkbox } from "@/ui/checkbox";
-import { ListRow } from "@/ui/list-row";
+import { VersionTree } from "@/features/manuscripts/version-tree";
 import { ErrorText, Screen } from "@/ui/screen";
 import { TextField } from "@/ui/text-field";
 import { colors, fonts, radius, space } from "@/ui/theme";
@@ -58,10 +58,13 @@ const RETRYABLE = new Set(["call_not_open", "missing_phone"]);
 export default function Submit() {
   const { t, i18n } = useTranslation();
   const session = useSession();
-  const params = useLocalSearchParams<{ versionId: string; callId?: string }>();
+  const params = useLocalSearchParams<{ versionId: string; callId?: string; workId?: string }>();
   const choosing = params.versionId === "choose";
   const [versionId, setVersionId] = useState<string | null>(choosing ? null : params.versionId);
   const [works, setWorks] = useState<Work[] | null>(null);
+  const [skippedVersion, setSkippedVersion] = useState(false);
+  const initialChoiceMade = useRef(false);
+  const [workScope, setWorkScope] = useState<string | undefined>(params.workId);
   const [callClosed, setCallClosed] = useState(false);
   const [step, setStep] = useState<Step>(choosing ? "version" : "calls");
   const [selected, setSelected] = useState<Map<string, OpenCall>>(new Map());
@@ -85,7 +88,7 @@ export default function Submit() {
   // A ref, not state: two quick taps land before React re-renders with busy = true.
   const sending = useRef(false);
 
-  const steps: Step[] = choosing
+  const steps: Step[] = (choosing && !skippedVersion) || step === "version"
     ? ["version", "calls", "materials", "review", "result"]
     : ["calls", "materials", "review", "result"];
   const calls = [...selected.values()];
@@ -98,7 +101,7 @@ export default function Submit() {
   const needsMaterials = needs.synopsis || needs.sample || needs.intro || needs.genre;
   const back: Step | null =
     step === "calls"
-      ? choosing
+      ? choosing && !skippedVersion
         ? "version"
         : null
       : step === "materials"
@@ -117,11 +120,21 @@ export default function Submit() {
 
   const userId = session?.userId;
   useEffect(() => {
-    if (!choosing || !userId) return;
+    if (!userId) return;
     listWorks(userId)
-      .then(setWorks)
+      .then((loaded) => {
+        setWorks(loaded);
+        if (!choosing || initialChoiceMade.current) return;
+        initialChoiceMade.current = true;
+        const eligible = loaded.filter((work) => !params.workId || work.id === params.workId).filter((work) => work.versions.length);
+        const available = eligible.flatMap((work) => work.versions);
+        if (!available.length) return;
+        const first = eligible[0];
+        setVersionId(first.versions.find((version) => version.id === first.main_version_id)?.id ?? first.versions[0].id);
+        if (available.length === 1) { setSkippedVersion(true); setStep("calls"); }
+      })
       .catch(() => setError(t("errors.network")));
-  }, [choosing, userId, t]);
+  }, [userId, choosing, params.workId, t]);
 
   // The call the send started from, selected for the writer. Gone or closed: say so, keep going.
   useEffect(() => {
@@ -286,9 +299,10 @@ export default function Submit() {
 
   const outcomeFor = (callId: string) => outcomes.find((outcome) => outcome.callId === callId);
   const allSent = items.length > 0 && items.every((item) => outcomeFor(item.callId)?.status === "sent");
-  const versions = (works ?? []).flatMap((work) =>
+  const versions = (works ?? []).filter((work) => !workScope || work.id === workScope).flatMap((work) =>
     work.versions.map((version, index) => ({ work, version, number: work.versions.length - index })),
   );
+  const selectedVersion = (works ?? []).flatMap((work) => work.versions.map((version, index) => ({ work, version, number: work.versions.length - index }))).find((item) => item.version.id === versionId);
   const sendLabel = t("submit.sendTo", { count: calls.length });
 
   // Shown next to the pinned action, so a tap that cannot go on always explains itself on screen.
@@ -306,7 +320,7 @@ export default function Submit() {
   );
 
   const footer =
-    step === "version" ? null : step === "calls" ? (
+    step === "version" ? (versions.length > 0 ? <Button label={t("common.continue")} disabled={!versionId} onPress={() => { if (versionId) chooseVersion(versionId); }} /> : null) : step === "calls" ? (
       <>
         {notices}
         <Text style={styles.muted}>{t("submit.selectedCount", { count: selected.size })}</Text>
@@ -333,14 +347,14 @@ export default function Submit() {
   return (
     // The materials step has a text field; a pinned footer would sit over the keyboard.
     <Screen footer={footer} pinFooter={step !== "materials"}>
-      <StepHeader
+      {!choosing || works !== null ? <StepHeader
         title={t(TITLE_KEYS[step])}
         backLabel={t("common.back")}
         onBack={back ? () => setStep(back) : null}
         current={steps.indexOf(step) + 1}
         total={steps.length}
         stepLabel={t("submit.step", { current: steps.indexOf(step) + 1, total: steps.length })}
-      />
+      /> : null}
 
       {step === "version" ? (
         works === null ? null : versions.length === 0 ? (
@@ -351,15 +365,8 @@ export default function Submit() {
         ) : (
           <View>
             <Text style={[styles.body, styles.intro]}>{t("submit.versionIntro")}</Text>
-            {versions.map(({ work, version, number }) => (
-              <ListRow
-                key={version.id}
-                title={work.title}
-                subtitle={t("submit.versionLine", { number, count: version.page_count, date: date(version.uploaded_at) })}
-                meta={version.label ?? undefined}
-                selected={version.id === versionId}
-                onPress={() => chooseVersion(version.id)}
-              />
+            {(works ?? []).filter((work) => (!workScope || work.id === workScope) && work.versions.length > 0).map((work) => (
+              <VersionTree key={work.id} work={work} mode="radio" selectedId={versionId} onSelect={(version) => setVersionId(version.id)} />
             ))}
           </View>
         )
@@ -367,6 +374,7 @@ export default function Submit() {
 
       {step === "calls" ? (
         <>
+          {selectedVersion ? <View style={styles.section}><Text style={styles.muted}>{t("submit.sendingVersion", { number: selectedVersion.number, date: date(selectedVersion.version.uploaded_at), label: selectedVersion.version.label ? ` · „${selectedVersion.version.label}”` : "" })}</Text>{selectedVersion.work.versions.length > 1 ? <Button label={t("submit.changeVersion")} variant="link" onPress={() => { setWorkScope(selectedVersion.work.id); setStep("version"); }} /> : null}</View> : null}
           {callClosed ? <Banner text={t("submit.callClosed")} /> : null}
           <Catalogue
             initialTab="calls"

@@ -54,11 +54,14 @@ jest.mock("@/features/submissions/catalogue-api", () => ({
 }));
 jest.mock("@/features/manuscripts/api", () => ({
   ...jest.requireActual("@/features/manuscripts/api"),
+  setMainVersion: jest.fn(),
   listWorks: jest.fn(async () => [
     {
       id: "work-1",
       title: "Malul",
-      versions: [{ id: "version-3", label: "final", page_count: 218, uploaded_at: "2026-10-14T10:00:00.000Z" }],
+      main_version_id: "version-2",
+      versions: [{ id: "version-3", label: "final", page_count: 218, uploaded_at: "2026-10-14T10:00:00.000Z" },
+        { id: "version-2", label: "earlier", page_count: 200, uploaded_at: "2026-09-14T10:00:00.000Z" }],
     },
   ]),
 }));
@@ -253,7 +256,9 @@ describe("submit_flow started from a call", () => {
     await renderRouter("./src/app", { initialUrl: "/submit/choose?callId=call-b" });
 
     expect(await screen.findByText("Step 1 of 5")).toBeOnTheScreen();
-    await fireEvent.press(await screen.findByRole("button", { name: /Malul/ }));
+    await screen.findByText("Malul");
+    await fireEvent.press(screen.getByRole("radio", { name: /Version 2/ }));
+    await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByText("Step 2 of 5")).toBeOnTheScreen();
     expect(await screen.findByRole("checkbox", { name: /^Apel B/ })).toBeChecked();
@@ -265,7 +270,9 @@ describe("submit_flow started from a call", () => {
   test("a call that is no longer open says so, and other calls can still be chosen", async () => {
     catalogueApi.getOpenCall.mockResolvedValueOnce(null);
     await renderRouter("./src/app", { initialUrl: "/submit/choose?callId=call-gone" });
-    await fireEvent.press(await screen.findByRole("button", { name: /Malul/ }));
+    await screen.findByText("Malul");
+    await fireEvent.press(screen.getByRole("radio", { name: /Version 2/ }));
+    await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByText(/isn't open anymore/)).toBeOnTheScreen();
     await fireEvent.press(await screen.findByRole("checkbox", { name: /^Apel A/ }));
@@ -279,5 +286,45 @@ describe("submit_flow started from a call", () => {
     expect(await screen.findByText(/no manuscript to send yet/)).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: "Go to Manuscripts" })).toBeOnTheScreen();
     expect(screen.queryByRole("checkbox")).toBeNull();
+  });
+});
+
+describe("submission version choice", () => {
+  test("workId limits choices without changing the main version", async () => {
+    manuscripts.listWorks.mockResolvedValueOnce([
+      { id: "work-1", title: "Malul", main_version_id: "version-2", versions: [{ id: "version-3", label: "final", page_count: 218, uploaded_at: "2026-10-14T10:00:00Z" }, { id: "version-2", label: "earlier", page_count: 200, uploaded_at: "2026-09-14T10:00:00Z" }] },
+      { id: "work-2", title: "Altă carte", versions: [{ id: "version-4", label: null, page_count: 10, uploaded_at: "2026-10-15T10:00:00Z" }] },
+    ]);
+    await renderRouter("./src/app", { initialUrl: "/submit/choose?workId=work-1" });
+    await screen.findByText("Malul");
+    expect(screen.queryByText("Altă carte")).toBeNull();
+    expect(screen.getByRole("radio", { name: /Version 1/ })).toBeChecked();
+    await fireEvent.press(screen.getByRole("radio", { name: /Version 2/ }));
+    expect(screen.getByText("What version are you sending?")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByText("Step 2 of 5")).toBeOnTheScreen();
+    expect(manuscripts.setMainVersion).not.toHaveBeenCalled();
+  });
+  test("a direct version shows a change link and returns to its work's versions", async () => {
+    await renderRouter("./src/app", { initialUrl: "/submit/version-3" });
+    expect(await screen.findByText(/Sending v2/)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: "Change" }));
+    expect(await screen.findByText("Malul")).toBeOnTheScreen();
+  });
+});
+
+describe("single-version shortcut", () => {
+  test("one available version skips the chooser and hides Change", async () => {
+    manuscripts.listWorks.mockResolvedValueOnce([{ id: "single", title: "Only", main_version_id: null, versions: [{ id: "only-version", label: null, page_count: 12, uploaded_at: "2026-10-14T10:00:00Z" }] }]);
+    await renderRouter("./src/app", { initialUrl: "/submit/choose?workId=single" });
+    expect(await screen.findByText(/Sending v1/)).toBeOnTheScreen();
+    expect(screen.getByText("Step 1 of 4")).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Change" })).toBeNull();
+  });
+  test("without a main version the newest is preselected", async () => {
+    manuscripts.listWorks.mockResolvedValueOnce([{ id: "work-1", title: "Malul", main_version_id: null, versions: [{ id: "v2", label: null, page_count: 20, uploaded_at: "2026-10-14" }, { id: "v1", label: null, page_count: 10, uploaded_at: "2026-09-14" }] }]);
+    await renderRouter("./src/app", { initialUrl: "/submit/choose?workId=work-1" });
+    expect(await screen.findByRole("radio", { name: /Version 2/ })).toBeChecked();
+    expect(screen.getAllByText("Malul")).toHaveLength(1);
   });
 });

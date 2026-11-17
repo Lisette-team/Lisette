@@ -224,6 +224,8 @@ body.panel-open main { padding-bottom: 46vh; }
       <div class="log-box">
         <h3>Ce s-a schimbat</h3>
         <ol>
+          <li><span class="date">Versiunea 14</span><br>Tabel nou <code>work_preferences</code>, vizibil doar proprietarului: steaua (favorite) și versiunea principală a unui manuscris, folosită implicit la trimitere; se golește dacă versiunea e ștearsă. Se pot șterge doar versiunile și manuscrisele netrimise.</li>
+          <li><span class="date">Versiunea 13</span><br>Task 04.1 (biblioteca), reguli noi, fără coloane noi. Cărțile din catalog (<code>works.source</code> = <code>isbn_lookup</code> sau <code>manual</code>) se creează publice, cu <code>is_published = true</code>. <code>works.isbn</code> îl scrie doar serverul (căutarea ISBN), niciodată aplicația. <code>library_entries.is_public</code> se poate pune doar pentru o operă publică, iar intrarea rămâne ascunsă între conturi care s-au blocat.</li>
           <li><span class="date">Versiunea 12</span><br>Task 02.2. <code>calls</code> are și <code>updated_at</code>, pentru că un apel se poate edita după publicare. Două liste noi pentru catalog (view-uri, fără tabele noi): <code>open_calls</code> (apelurile deschise, cu numele, tipul și politica publicației) și <code>catalogue_publishers</code> (publicațiile aprobate, cu genurile lor, câte apeluri deschise au și în ce limbi). La <code>submission_materials</code>: sinopsisul și fragmentul sunt PDF-uri în <code>storage_path</code>, prezentarea autorului e text în <code>body</code>.</li>
           <li><span class="date">Versiunea 11</span><br>Coloană nouă <code>works.publisher_name</code>: numele editurii ca text simplu, pentru cărțile a căror editură nu e pe Lisette. Era deja în documentul de design, lipsea de aici. <code>domain_events.channels</code> e listă fixă (<code>notification_channel[]</code>) în ambele documente. ISBN-ul trebuie să înceapă cu 978 sau 979, ca un cod de bare de produs să nu treacă drept carte.</li>
           <li><span class="date">Versiunea 10</span><br>Planurile de implementare au fost rescrise scurt, pe modelul nou. Fiecare task numește tabelele pe care le creează din această schemă. <code>domain_events</code> se creează acum în fundație (task 01.3), ca amândoi să-l puteți folosi de la început. Schema nu s-a schimbat.</li>
@@ -266,6 +268,8 @@ body.panel-open main { padding-bottom: 46vh; }
           <li>Apelurile unei publicații neaprobate nu apar ca deschise până la aprobare.</li>
           <li><code>sharing_policy</code> și <code>resubmission_allowed</code> rămân pe publicație și se aplică tuturor apelurilor ei.</li>
           <li>Un apel fără genuri acceptă orice gen.</li>
+          <li>O carte din catalog (găsită după ISBN sau adăugată manual) e publică și publicată; intrarea din biblioteca persoanei rămâne privată.</li>
+          <li>Unei cărți adăugate manual doar serverul îi poate pune ISBN-ul, după ce Open Library nu o găsește.</li>
           <li>Catalogul are două file, Apeluri deschise și Publicații; îl vede oricine e logat, dar doar scriitorii trimit.</li>
           <li>Sinopsisul și capitolele de probă se trimit ca PDF; prezentarea autorului e un text scurt. Fără Word.</li>
           <li>Telefonul se completează o dată, într-o secțiune privată de date de contact (ecranul ține de profiluri).</li>
@@ -411,6 +415,9 @@ const TABLES = [
   T("works", "portfolio_entries", "public", "Secțiunea Publicații de pe profilul autorului: cărți, apariții în reviste și ziare, antologii. Le adaugă autorul singur, fără verificare; din ele se construiește și „Recently published”.", [
     "id*|uuid|", "author_id>profiles|uuid|", "kind|portfolio_kind|", "title|text|1–200 caractere", "outlet?|text|numele revistei, ziarului sau editurii; max 200",
     "year?|smallint|între 1800 și anul curent", "url?|text|URL https", "work_id>works?|uuid|dacă opera există pe Lisette", ...TS]),
+  T("works", "work_preferences", "privat", "Preferințele manuscrisului, vizibile doar proprietarului.", [
+    "work_id*>works|uuid|șters odată cu opera", "is_starred|boolean|implicit false", "main_version_id>manuscript_versions?|uuid|versiunea principală; se golește la ștergerea versiunii", "updated_at|timestamptz|"],
+    "Se pot șterge doar manuscrisele și versiunile netrimise."),
   T("works", "manuscript_versions", "privat", "Fișierele PDF ale manuscrisului. O versiune nu se mai schimbă după încărcare.", [
     "id*|uuid|", "work_id>works|uuid|", "storage_path|text|în bucketul privat manuscripts", "sha256|text|amprenta fișierului: 64 caractere hex",
     "byte_size|integer|max 20 MiB = 20 971 520 (propunere)", "page_count|integer|mai mare decât 0", "label?|text|ex. „v2 după redactare”; max 80", "uploaded_at|timestamptz|implicit now()"]),

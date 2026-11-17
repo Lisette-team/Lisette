@@ -18,7 +18,9 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 ## Confirmed Manuscript Versions and Submission Copies
 - The first version accepts manuscript uploads in PDF format only. DOCX and other manuscript file formats are outside this initial scope. Validate actual supported file content as well as the filename before accepting an upload.
-- Authors maintain their own manuscript collection with multiple versions.
+- Authors maintain their own manuscript collection with multiple versions. They may star manuscripts, with starred items first; the first starred manuscript is featured. Favorites are visible only to the owner (decided 2026-11-17).
+- An author may select a main version on the manuscript detail screen. Sending starts with it by default; changing the version in a particular send does not change the main version. Uploading a version does not change it. Deleting the main version clears that choice (decided 2026-11-17).
+- Only versions never used in a submission, and manuscripts with no submissions, can be deleted. The recipient keeps the version it received. Deletion requires confirmation, not device authentication (decided 2026-11-17).
 - For each submission, the author selects the manuscript version to send. Different submissions may use different versions, or reuse the same one.
 - Authors can preview the selected PDF inside Lisette before submitting, to confirm the correct file/version. The preview is read-only and does not provide manuscript-content editing.
 - Each submission retains an immutable copy of its selected version. Metadata edits or newly uploaded manuscript versions do not change an already submitted copy; manuscript content is revised outside Lisette.
