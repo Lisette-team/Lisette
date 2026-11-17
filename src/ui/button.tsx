@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   secondary: { borderWidth: 1.5, borderColor: colors.line },
   link: { minHeight: 48 },
   pressed: { opacity: 0.8 },
-  label: { fontFamily: fonts.uiSemiBold, fontSize: 17 },
+  label: { fontFamily: fonts.uiSemiBold, fontSize: 17, textAlign: "center" },
 });
 
 const labelStyles = StyleSheet.create({

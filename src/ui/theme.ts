@@ -10,6 +10,12 @@ export const colors = {
   line: "#9C8D80",
   field: "#FCF8F1",
   surfaceMuted: "#EFE6D8",
+  // v6 working tones (docs/design/tokens.json), not approved palette entries.
+  hairline: "#E0D4C2",
+  pressed: "#E5D9C6",
+  primarySoft: "#F1DFE0",
+  goldSoft: "#F3E6CC",
+  scrim: "#2E1F1A80",
   shadow: "#2E1F1A24",
   onBurgundy: "#FFFFFF",
   // v6 working tokens (docs/design/tokens.json): cards, fine separators, active and warm backgrounds.

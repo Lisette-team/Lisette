@@ -43,6 +43,7 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 - Selection by one publisher does not withdraw, close or change the status of submissions to other publishers. Those submissions remain active under their own access and sharing rules. The author decides separately whether to withdraw eligible submissions; selection does not imply exclusivity.
 - Publishers communicate their review and selection decisions through the relevant submission status. Revision requests, contract management and editorial workflows are outside the current product scope.
 - Before submitting, clearly disclose that the author's contact email and mandatory phone number will be shared with the selected recipient publishers and obtain their agreement. Do not expose those contact details publicly or to publishers that have not received a submission.
+- The author enters the phone number once, in a private contact-details section (decided 2026-11-11). Its screen belongs to the profile work and is not built yet; until then the send flow says the phone is missing and nothing can be sent.
 - Use the submission contact email and mandatory phone number for the publisher to contact the author directly after selection. Consent to that disclosure does not imply consent to unrelated marketing. Both a contact email and a phone number are required before manuscript submission, so recipient publishers have multiple contact methods. Requiring a phone number does not imply SMS verification; that has not been agreed.
 - The community can continue following an author and reading permitted public excerpts before and after selection. Publishers may discover existing reader interest through the author's public presence; no audience scoring or guaranteed readership is implied.
 
@@ -72,6 +73,7 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 ## Confirmed Submission Requirements
 - Each publisher or submission call can configure which submission materials are required: full manuscript, synopsis, excerpt or sample chapters, literary genre, and a short author introduction.
+- Format (decided 2026-11-11): the synopsis and the sample chapters are uploaded as PDF files and checked like manuscripts; the short author introduction is a text field. Word documents are not accepted. Materials are given once per send and go only to the calls that ask for them.
 - Show the applicable requirements before the author submits. Validate required materials before accepting the submission.
 - Submission materials are private to the author and selected publisher. Providing a synopsis or sample for review does not publish it or bypass the separate reader-sharing approval policy.
 - These fields cover the current agreed scope; arbitrary custom questionnaires are not required.
@@ -120,6 +122,8 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 ## Confirmed Publisher Discovery Catalogue
 - Provide a searchable publisher catalogue so authors can discover recipients before submitting manuscripts.
+- Two views on one screen (decided 2026-11-11): **Open calls**, the default, lists every open call on its own with its publication, deadline, genres, languages and required materials, soonest deadline first and always-open calls after; **Publications** lists all publication kinds with what they look for in general and whether they have open calls. Both views share the genre, manuscript language and publication kind filters. Authors select calls directly to send to several. Opening the catalogue to send a manuscript starts on Open calls; browsing from Discover starts on Publications.
+- Every signed-in account sees the catalogue: readers, writers and publications. Only writers can send from it (decided 2026-11-11).
 - Publisher profiles show an introduction, accepted literary genres and manuscript languages, whether ongoing submissions are open, and currently open calls or competitions.
 - Support search and filtering by accepted genre, manuscript language and submission availability. Exact filter UI and search implementation remain design choices.
 - Show applicable requirements before submission. Catalogue discovery must not bypass manual publisher approval: unapproved publisher accounts cannot receive manuscripts.

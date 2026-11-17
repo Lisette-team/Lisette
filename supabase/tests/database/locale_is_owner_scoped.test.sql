@@ -8,7 +8,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('22222222-2222-2222-2222-222222222222', 'bogdan@test.local', '{"display_name": "Bogdan"}');
 
 select results_eq(
-  $$ select id::text, kind::text, locale::text from public.accounts order by id $$,
+  $$ select id::text, kind::text, locale::text from public.accounts
+     where id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222') order by id $$,
   $$ values ('11111111-1111-1111-1111-111111111111', 'person', 'en'),
             ('22222222-2222-2222-2222-222222222222', 'person', 'ro') $$,
   'sign-up creates a person account; locale defaults to ro'

@@ -29,9 +29,10 @@ beforeEach(() => {
   mockWide = false;
 });
 
-function signedIn(authorEnabled: boolean, initialUrl = "/home") {
+function signedIn(authorEnabled: boolean, initialUrl = "/home", kind: "person" | "publisher" = "person") {
   const user = mockSupabase.addVerifiedUser("reader@example.test", "correct-horse-1", "en");
   user.authorEnabled = authorEnabled;
+  user.kind = kind;
   mockSupabase.signInAs(user.email);
   return renderRouter("./src/app", { initialUrl });
 }
@@ -57,6 +58,20 @@ describe("app_menu", () => {
     await waitFor(() => expect(app.getPathname()).toBe("/profile"));
   });
 
+  test("a publication gets Home, Discover, Calls and Profile, around the + button", async () => {
+    await signedIn(false, "/home", "publisher");
+
+    expect(await screen.findByRole("tab", { name: "Calls" })).toBeOnTheScreen();
+    expect(tabNames()).toEqual(["Home", "Discover", "Calls", "Profile"]);
+  });
+
+  test("a publication's Profile offers no writer profile", async () => {
+    await signedIn(false, "/profile", "publisher");
+
+    expect(await screen.findByRole("button", { name: "Settings" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Add a writer profile" })).toBeNull();
+  });
+
   test("a reader who opens /manuscripts is sent to Profile", async () => {
     const app = await signedIn(false, "/manuscripts");
 
@@ -76,6 +91,15 @@ describe("app_menu", () => {
 });
 
 describe("wide_screen_shell", () => {
+  test("a publication can reach Calls from the sidebar", async () => {
+    mockWide = true;
+    const app = await signedIn(false, "/home", "publisher");
+
+    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Calls", "Profile"]));
+    await fireEvent.press(screen.getByRole("tab", { name: "Calls" }));
+    await waitFor(() => expect(app.getPathname()).toBe("/calls"));
+  });
+
   test("wide screens get the left sidebar instead of the bottom bar", async () => {
     mockWide = true;
     const app = await signedIn(true);

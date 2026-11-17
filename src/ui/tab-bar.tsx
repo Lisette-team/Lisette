@@ -16,12 +16,12 @@ const star = ([x, y, r]: readonly number[]) =>
   `M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`;
 
 // The bottom bar from the v6 designs. The route named "create" is drawn as the round + button;
-// `hidden` is the one tab this person doesn't get (Profile for writers, Manuscripts for readers).
-export function TabBar({ state, descriptors, emitter, navigateToTab, insets, hidden }: BottomTabBarProps & { hidden: string }) {
+// `hidden` lists the tabs this account doesn't get (see the tabs layout).
+export function TabBar({ state, descriptors, emitter, navigateToTab, insets, hidden }: BottomTabBarProps & { hidden: string[] }) {
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom + space.sm }]}>
       {state.routes.map((route, index) => {
-        if (route.name === hidden) return null;
+        if (hidden.includes(route.name)) return null;
         const { options } = descriptors[route.key];
         const label = options.title ?? route.name;
         const focused = state.index === index;

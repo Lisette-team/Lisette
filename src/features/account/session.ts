@@ -13,7 +13,7 @@ import i18n, { isLocale, type Locale } from "@/i18n";
 import * as storage from "@/lib/storage";
 import { supabase } from "@/lib/supabase";
 
-export type AuthSession = { userId: string; locale: Locale; authorEnabled: boolean };
+export type AuthSession = { userId: string; kind: "person" | "publisher"; locale: Locale; authorEnabled: boolean };
 
 // "loading" is kept apart from "signedOut" so a restored session never
 // triggers a redirect to the start screen while it is still being read.
@@ -67,9 +67,14 @@ async function applyLocale(locale: Locale) {
 // { accountId, kind, locale, authorEnabled, approvalStatus }.
 export function sessionFromContext(data: unknown): AuthSession | null {
   if (!data || typeof data !== "object") return null;
-  const { accountId, locale, authorEnabled } = data as { accountId?: unknown; locale?: unknown; authorEnabled?: unknown };
+  const { accountId, kind, locale, authorEnabled } = data as {
+    accountId?: unknown;
+    kind?: unknown;
+    locale?: unknown;
+    authorEnabled?: unknown;
+  };
   if (typeof accountId !== "string" || !isLocale(locale)) return null;
-  return { userId: accountId, locale, authorEnabled: authorEnabled === true };
+  return { userId: accountId, kind: kind === "publisher" ? "publisher" : "person", locale, authorEnabled: authorEnabled === true };
 }
 
 async function loadSessionContext(): Promise<AuthSession | null> {

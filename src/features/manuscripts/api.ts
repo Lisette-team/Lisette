@@ -45,19 +45,23 @@ export async function createWork(title: string): Promise<string> {
   return data as string;
 }
 
-// The server checks the real content, size and ownership, then records the hash and upload time.
-export async function uploadVersion(workId: string, file: DocumentPickerAsset, label: string): Promise<ManuscriptVersion> {
+// Sends a picked PDF to manuscript-upload; throws an UploadError code.
+export async function postPdf<T>(query: URLSearchParams, file: DocumentPickerAsset): Promise<T> {
   // The PDF is the whole body, so the server reads it only once. Web has the picked File; native reads
   // the picked file's URI into a Blob.
   const body = Platform.OS === "web" && file.file ? file.file : await (await fetch(file.uri)).blob();
-  const query = new URLSearchParams({ workId, label });
-  const { data, error } = await supabase.functions.invoke<ManuscriptVersion>(`manuscript-upload?${query}`, {
+  const { data, error } = await supabase.functions.invoke<T>(`manuscript-upload?${query}`, {
     body,
     headers: { "Content-Type": "application/pdf" },
   });
   if (!error && data) return data;
   const status = error instanceof FunctionsHttpError ? (error.context as Response).status : 0;
   throw new Error(status === 422 ? "invalid_pdf" : status === 413 ? "too_large" : "unknown");
+}
+
+// The server checks the real content, size and ownership, then records the hash and upload time.
+export function uploadVersion(workId: string, file: DocumentPickerAsset, label: string): Promise<ManuscriptVersion> {
+  return postPdf(new URLSearchParams({ workId, label }), file);
 }
 
 // The reader fetches the bytes itself with these, so the file never passes through app storage.

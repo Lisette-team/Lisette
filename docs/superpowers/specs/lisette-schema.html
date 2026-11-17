@@ -224,6 +224,7 @@ body.panel-open main { padding-bottom: 46vh; }
       <div class="log-box">
         <h3>Ce s-a schimbat</h3>
         <ol>
+          <li><span class="date">Versiunea 12</span><br>Task 02.2. <code>calls</code> are și <code>updated_at</code>, pentru că un apel se poate edita după publicare. Două liste noi pentru catalog (view-uri, fără tabele noi): <code>open_calls</code> (apelurile deschise, cu numele, tipul și politica publicației) și <code>catalogue_publishers</code> (publicațiile aprobate, cu genurile lor, câte apeluri deschise au și în ce limbi). La <code>submission_materials</code>: sinopsisul și fragmentul sunt PDF-uri în <code>storage_path</code>, prezentarea autorului e text în <code>body</code>.</li>
           <li><span class="date">Versiunea 11</span><br>Coloană nouă <code>works.publisher_name</code>: numele editurii ca text simplu, pentru cărțile a căror editură nu e pe Lisette. Era deja în documentul de design, lipsea de aici. <code>domain_events.channels</code> e listă fixă (<code>notification_channel[]</code>) în ambele documente. ISBN-ul trebuie să înceapă cu 978 sau 979, ca un cod de bare de produs să nu treacă drept carte.</li>
           <li><span class="date">Versiunea 10</span><br>Planurile de implementare au fost rescrise scurt, pe modelul nou. Fiecare task numește tabelele pe care le creează din această schemă. <code>domain_events</code> se creează acum în fundație (task 01.3), ca amândoi să-l puteți folosi de la început. Schema nu s-a schimbat.</li>
           <li><span class="date">Versiunea 9</span><br>„Aceasta e cartea?” la adăugarea manuală: căutare după titlu și autor asemănător în <code>works</code> (index <code>pg_trgm</code>), ca să nu apară aceeași carte de două ori. Fără tabele sau coloane noi.</li>
@@ -265,13 +266,18 @@ body.panel-open main { padding-bottom: 46vh; }
           <li>Apelurile unei publicații neaprobate nu apar ca deschise până la aprobare.</li>
           <li><code>sharing_policy</code> și <code>resubmission_allowed</code> rămân pe publicație și se aplică tuturor apelurilor ei.</li>
           <li>Un apel fără genuri acceptă orice gen.</li>
+          <li>Catalogul are două file, Apeluri deschise și Publicații; îl vede oricine e logat, dar doar scriitorii trimit.</li>
+          <li>Sinopsisul și capitolele de probă se trimit ca PDF; prezentarea autorului e un text scurt. Fără Word.</li>
+          <li>Telefonul se completează o dată, într-o secțiune privată de date de contact (ecranul ține de profiluri).</li>
           <li>Lista de pornire de genuri (12): poezie, proză scurtă, roman, nuvelă, eseu, dramaturgie, literatură pentru copii, young adult, memorialistică, non-ficțiune, SF și fantasy, polițist și thriller.</li>
         </ul>
       </div>
       <div class="log-box todo">
         <h3>Decis de mine, de confirmat</h3>
         <ol>
-          <li>Nimic de confirmat acum.</li>
+          <li>Un apel publicat se poate edita până e anulat; trimiterile deja făcute păstrează regulile acceptate atunci (<code>accepted_policy</code>).</li>
+          <li>După retragere sau respingere, publicația nu mai vede materialele trimiterii; autorul le vede în continuare.</li>
+          <li>Un PDF încărcat pentru o trimitere care nu mai pleacă rămâne în bucket; păstrarea datelor nu e încă decisă.</li>
         </ol>
       </div>
     </div>
@@ -412,7 +418,7 @@ const TABLES = [
     "id*|uuid|", "publisher_id>publishers|uuid|", "title|text|1–200 caractere; un concurs se numește ca atare aici", "description?|text|max 5000 caractere (propunere)",
     "opens_at|timestamptz|", "closes_at?|timestamptz|gol = mereu deschis; altfel după opens_at", "accepted_languages|text[]|coduri ISO 639-1, ex. {ro,en}; măcar una",
     "req_full_manuscript|boolean|implicit true", "req_synopsis|boolean|implicit false", "req_sample|boolean|implicit false", "req_genre|boolean|implicit false", "req_author_intro|boolean|implicit false",
-    "published_at?|timestamptz|gol = ciornă, nevizibil", "cancelled_at?|timestamptz|", ...TS],
+    "published_at?|timestamptz|gol = ciornă, nevizibil", "cancelled_at?|timestamptz|", ...TSU],
     "Deschis = publicat, neanulat, opens_at a trecut și closes_at e gol sau în viitor. Publicația trebuie să fie aprobată ca apelul să apară deschis."),
   T("works", "call_genres", "public", "Genurile acceptate de un apel. Niciun rând = orice gen.", [
     "call_id*>calls|uuid|", "genre_id*>genres|uuid|"]),
@@ -425,8 +431,8 @@ const TABLES = [
     "idempotency_key|uuid|unic; generat de aplicație ca reîncercarea să nu dubleze", "submitted_at|timestamptz|implicit now()", "status_changed_at|timestamptz|ultima schimbare de status"],
     "Unic: idempotency_key. O singură trimitere activă (submitted, in_review, on_hold, selected) per (work_id, publisher_id)."),
   T("works", "submission_materials", "privat", "Sinopsisul, fragmentul și prezentarea autorului, trimise odată cu manuscrisul.", [
-    "id*|uuid|", "submission_id>submissions|uuid|", "kind|material_kind|", "body?|text|max 5000 caractere (propunere)", "storage_path?|text|PDF opțional pentru fragment"],
-    "Unic: (submission_id, kind). Măcar unul dintre body și storage_path e completat."),
+    "id*|uuid|", "submission_id>submissions|uuid|", "kind|material_kind|", "body?|text|doar prezentarea autorului; max 5000 caractere (propunere)", "storage_path?|text|PDF pentru sinopsis și capitolele de probă, în bucketul privat manuscripts"],
+    "Unic: (submission_id, kind). Măcar unul dintre body și storage_path e completat. Sinopsisul și fragmentul sunt PDF-uri; prezentarea autorului e text."),
   T("works", "submission_status_history", "privat", "Istoricul schimbărilor de status. Rândurile doar se adaugă, nu se modifică.", [
     "id*|uuid|", "submission_id>submissions|uuid|", "from_status?|submission_status|gol la prima intrare", "to_status|submission_status|",
     "changed_by>accounts|uuid|autorul sau publicația", "note?|text|max 1000 caractere", "changed_at|timestamptz|implicit now()"]),

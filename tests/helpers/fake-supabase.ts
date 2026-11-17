@@ -10,6 +10,7 @@ type FakeUser = {
   locale: Locale;
   verified: boolean;
   authorEnabled?: boolean;
+  kind?: "person" | "publisher";
   metadata?: Record<string, unknown>;
 };
 type Listener = (event: string, session: { user: { id: string } } | null) => void;
@@ -84,7 +85,7 @@ export function createFakeSupabase() {
     async rpc(name: string, args?: { locale?: Locale }) {
       if (!current) return { data: null, error: { code: "42501", message: "not authenticated" } };
       if (name === "get_session_context") {
-        return { data: { accountId: current.id, kind: "person", locale: current.locale, authorEnabled: Boolean(current.authorEnabled), approvalStatus: null }, error: null };
+        return { data: { accountId: current.id, kind: current.kind ?? "person", locale: current.locale, authorEnabled: Boolean(current.authorEnabled), approvalStatus: null }, error: null };
       }
       if (name === "activate_author") {
         current.authorEnabled = true;

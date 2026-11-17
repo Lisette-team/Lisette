@@ -314,6 +314,7 @@ These screens show behaviour that changed on 2026-10-21. Build the documented be
 - **S-05 Cerere de cont de editură:** drawn as a request made from a person's account. A publication now signs up with its own email as a separate account, chooses its kind (publishing house, literary magazine or independent editor) and can post, comment, share quotes and create events while approval is pending.
 - **S-14 Setările editurii:** "Primesc manuscrise direct", the required materials and the genres/languages are no longer publisher settings. They belong to each call (S-43); an always-open call replaces direct submissions. Profile genres, resubmission and the sharing policy stay in publisher settings.
 - **S-24 Catalog / S-13 Profil de editură:** "accepts submissions now" comes from having an open call; add a filter by publication kind.
+- **S-24 Catalog (2026-11-11):** drawn as a publisher list only. It now has two tabs, Open calls (default, one card per call) and Publications; see `docs/product/screens.md`. The drawing will be redone together with the 02.2 code.
 - **S-62 Adăugare manuală:** before saving, show "Is this the book?" with existing similar books to pick from, or "add a new book".
 - **Not drawn yet:** a publication sharing a quote as a preview (choosing its own published book or a received manuscript), and the author's screen to approve such a quote.
 

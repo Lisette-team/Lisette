@@ -77,6 +77,7 @@ export default function Manuscripts() {
                 {version.label ? ` · ${version.label}` : ""}
               </Text>
               <Button label={t("manuscripts.read")} variant="link" onPress={() => router.push(`/reader/${version.id}`)} />
+              <Button label={t("manuscripts.send")} variant="link" onPress={() => router.push(`/submit/${version.id}`)} />
             </View>
           ))}
           <Button label={t("manuscripts.newVersion")} variant="secondary" busy={busy} onPress={() => upload(work.id)} />

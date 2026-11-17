@@ -25,9 +25,11 @@ type Props = {
   footer?: ReactNode;
   // Lets a screen scroll itself, for example to a field at the bottom once the keyboard is open.
   scrollRef?: Ref<ScrollViewInstance>;
+  // Pin actions for lists and multi-step flows that do not open the keyboard.
+  pinFooter?: boolean;
 };
 
-export function Screen({ title, backLabel, action, children, footer, scrollRef }: Props) {
+export function Screen({ title, backLabel, action, children, footer, scrollRef, pinFooter = false }: Props) {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Android draws edge to edge, so the window no longer shrinks for the keyboard: make room here. */}
@@ -53,10 +55,16 @@ export function Screen({ title, backLabel, action, children, footer, scrollRef }
               </View>
             ) : null}
             <View style={styles.body}>{children}</View>
-            {footer ? <View style={styles.footer}>{footer}</View> : null}
+            {footer && !pinFooter ? <View testID="screen-footer" style={styles.footer}>{footer}</View> : null}
           </View>
         </ScrollView>
+        {footer && pinFooter ? (
+          <View testID="screen-footer" style={styles.pinned}>
+            <View style={styles.pinnedColumn}>{footer}</View>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
+
     </SafeAreaView>
   );
 }
@@ -84,5 +92,14 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.ink },
   body: { flex: 1, gap: space.md },
   footer: { gap: space.sm, paddingTop: space.xl },
+  pinned: {
+    alignItems: "center",
+    paddingTop: space.md,
+    paddingBottom: space.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    backgroundColor: colors.paper,
+  },
+  pinnedColumn: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: space.lg, gap: space.sm },
   error: { fontFamily: fonts.uiMedium, fontSize: 15, color: colors.burgundy },
 });
