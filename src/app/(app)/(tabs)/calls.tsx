@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 
+import { ProfileButton } from "@/features/account/profile-button";
 import { useSession } from "@/features/account/session";
 import { callStatus, listMyCalls, type Call } from "@/features/calls/api";
 import { StatusBadge } from "@/features/calls/status-badge";
@@ -35,6 +36,7 @@ export default function Calls() {
   return (
     <Screen
       title={t("publisher.callsTitle")}
+      action={<ProfileButton />}
       footer={<Button label={t("publisher.newCall")} onPress={() => router.push("/call/new")} />}
       pinFooter
     >

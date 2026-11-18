@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "./icon";
-import { colors, contentMaxWidth, fonts, space } from "./theme";
+import { colors, contentMaxWidth, fonts, gutter, space } from "./theme";
 
 type Props = {
   title?: string;
@@ -34,26 +34,24 @@ export function Screen({ title, backLabel, action, children, footer, scrollRef, 
     <SafeAreaView style={styles.safeArea}>
       {/* Android draws edge to edge, so the window no longer shrinks for the keyboard: make room here. */}
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "web" ? undefined : "padding"}>
+        {title ? (
+          <TopBar>
+            {backLabel && router.canGoBack() ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={backLabel}
+                hitSlop={12}
+                onPress={() => router.back()}
+              >
+                <Icon name="arrowLeft" color={colors.ink} size={28} />
+              </Pressable>
+            ) : null}
+            <Text accessibilityRole="header" style={titleStyle}>{title}</Text>
+            {action}
+          </TopBar>
+        ) : null}
         <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.column}>
-            {title ? (
-              <View style={styles.header}>
-                {backLabel && router.canGoBack() ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={backLabel}
-                    hitSlop={12}
-                    onPress={() => router.back()}
-                  >
-                    <Icon name="arrowLeft" color={colors.ink} size={28} />
-                  </Pressable>
-                ) : null}
-                <Text accessibilityRole="header" style={styles.title}>
-                  {title}
-                </Text>
-                {action}
-              </View>
-            ) : null}
             <View style={styles.body}>{children}</View>
             {footer && !pinFooter ? <View testID="screen-footer" style={styles.footer}>{footer}</View> : null}
           </View>
@@ -68,6 +66,16 @@ export function Screen({ title, backLabel, action, children, footer, scrollRef, 
     </SafeAreaView>
   );
 }
+
+export function TopBar({ children }: { children: ReactNode }) {
+  return (
+    <View testID="screen-header" style={styles.topBar}>
+      <View style={styles.topBarColumn}>{children}</View>
+    </View>
+  );
+}
+
+export const titleStyle = { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.ink } as const;
 
 export function ErrorText({ children }: { children: ReactNode }) {
   return (
@@ -85,11 +93,11 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     maxWidth: contentMaxWidth,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: gutter,
     paddingVertical: space.lg,
   },
-  header: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.lg },
-  title: { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.ink },
+  topBar: { alignItems: "center", backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
+  topBarColumn: { width: "100%", maxWidth: contentMaxWidth, minHeight: 56, paddingHorizontal: gutter, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.md },
   body: { flex: 1, gap: space.md },
   footer: { gap: space.sm, paddingTop: space.xl },
   pinned: {
@@ -100,6 +108,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.hairline,
     backgroundColor: colors.paper,
   },
-  pinnedColumn: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: space.lg, gap: space.sm },
+  pinnedColumn: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: gutter, gap: space.sm },
   error: { fontFamily: fonts.uiMedium, fontSize: 15, color: colors.burgundy },
 });

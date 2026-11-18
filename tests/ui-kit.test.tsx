@@ -92,6 +92,16 @@ describe("ui kit", () => {
     expect(view.getByText("Pasul 2 din 4")).toBeOnTheScreen();
   });
 
+  test("a title header stays outside the scrolling content", async () => {
+    const view = await render(<Screen title="Titlu"><></></Screen>, { wrapper: SafeArea });
+
+    const header = view.getByTestId("screen-header");
+    expect(view.getByRole("header", { name: "Titlu" })).toBeOnTheScreen();
+    let node = header.parent;
+    while (node && node.type !== "RCTScrollView") node = node.parent;
+    expect(node).toBeNull();
+  });
+
   test("a pinned footer stays outside the scrolling content", async () => {
     const view = await render(
       <Screen title="Pasul 2" pinFooter footer={<></>}>

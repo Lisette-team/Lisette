@@ -25,8 +25,8 @@ import { Button } from "@/ui/button";
 import { Dialog } from "@/ui/dialog";
 import { Icon } from "@/ui/icon";
 import { useWide } from "@/ui/layout";
-import { ErrorText } from "@/ui/screen";
-import { colors, contentMaxWidth, fonts, radius, space } from "@/ui/theme";
+import { ErrorText, TopBar, titleStyle } from "@/ui/screen";
+import { colors, contentMaxWidth, fonts, gutter, radius, space } from "@/ui/theme";
 
 const MAGNIFIER = require("../../../../assets/illustrations/semn-lupa.svg");
 const READING = require("../../../../assets/illustrations/semn-citeste.svg");
@@ -133,15 +133,6 @@ export default function Library() {
         })
       : t("library.readSummaryNone", { year: read.year })
     : null;
-
-  const header = (
-    <View style={styles.header}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {t("library.myLibrary")}
-      </Text>
-      <ProfileButton always size={44} />
-    </View>
-  );
 
   const addActions = canScan ? (
     <View style={styles.scanCard}>
@@ -300,6 +291,12 @@ export default function Library() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      {!wide ? (
+        <TopBar>
+          <Text accessibilityRole="header" style={titleStyle}>{t("library.myLibrary")}</Text>
+          <ProfileButton />
+        </TopBar>
+      ) : null}
       <ScrollView contentContainerStyle={styles.scroll}>
         {wide ? (
           // v6 S-60 web: the title, the shelf chips and the arched bookcase on the left; the privacy
@@ -342,7 +339,6 @@ export default function Library() {
           </View>
         ) : (
           <View style={styles.column}>
-            {header}
             <PrivacyBanner />
             {addActions}
             {notices}
@@ -392,7 +388,7 @@ export default function Library() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.paper },
   scroll: { flexGrow: 1, alignItems: "center", paddingBottom: space.xl },
-  column: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: space.lg - 4, gap: space.md + 4 },
+  column: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: gutter, paddingTop: space.lg, gap: space.md + 4 },
   // Measured from s-60-biblioteca-web.png: 32 px margins, a 380 px right column 32 px from the bookcase.
   wide: { width: "100%", flexDirection: "row", gap: space.xl, padding: space.xl, paddingTop: space.lg + 4 },
   wideMain: { flex: 1, minWidth: 0, maxWidth: 760, gap: space.md },
@@ -426,8 +422,6 @@ const styles = StyleSheet.create({
   spinePale: { height: 38, backgroundColor: colors.surfaceMuted },
   readText: { flex: 1, gap: 2 },
   readTitle: { fontFamily: fonts.heading, fontSize: 22, color: colors.ink },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: space.lg },
-  title: { flex: 1, fontFamily: fonts.heading, fontSize: 32, color: colors.ink },
   muted: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: colors.inkMuted },
   scanCard: {
     flexDirection: "row",

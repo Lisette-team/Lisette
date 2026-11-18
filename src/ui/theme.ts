@@ -39,5 +39,8 @@ export const space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 } as const;
 
 export const radius = { field: 12, card: 20, sheet: 24, pill: 999 } as const;
 
+// Side margin of every screen, from v6.
+export const gutter = 20;
+
 // Content column width on tablets and web, so actions never stretch or clip.
 export const contentMaxWidth = 480;
