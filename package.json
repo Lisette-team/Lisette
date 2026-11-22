@@ -18,6 +18,7 @@
     "test:gateway": "jest --runInBand --config jest.gateway.config.js"
   },
   "dependencies": {
+    "@10play/tentap-editor": "^1.1.0",
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/literata": "^0.4.3",
     "@expo-google-fonts/newsreader": "^0.4.1",
@@ -44,6 +45,7 @@
     "react-dom": "19.3.0",
     "react-i18next": "^17.1.0",
     "react-native": "0.88.0",
+    "react-native-render-html": "^6.3.4",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
     "react-native-svg": "15.16.0",
@@ -73,6 +75,9 @@
     "testPathIgnorePatterns": [
       "/node_modules/",
       "<rootDir>/tests/gateway/"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/helpers/rich-editor-mock.js"
     ]
   }
 }

@@ -17,5 +17,5 @@ test("the version tree shows the work once and opens the chosen branch", async (
   expect(await screen.findByText("Roman")).toBeOnTheScreen();
   expect(screen.getAllByText("Roman")).toHaveLength(1);
   await fireEvent.press(screen.getByRole("button", { name: /Version 2 · 4 p/ }));
-  expect(mockPush).toHaveBeenCalledWith("/reader/v2");
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/reader/[versionId]", params: { versionId: "v2", title: "Roman" } });
 });

@@ -48,6 +48,11 @@ supabase/functions/.env
 /blob-report/
 /playwright/.cache/
 
-#agents
+# agents (keep .github/workflows tracked)
 .claude/
-.github/
+.github/skills/
+.github/agents/
+.github/hooks/
+
+# Impeccable design-review reports (local)
+/.impeccable/

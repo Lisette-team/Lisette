@@ -484,7 +484,7 @@ export default function Submit() {
                 </View>
               );
             })}
-            <Button label={t("submit.previewPdf")} variant="link" onPress={() => router.push(`/reader/${versionId}`)} />
+            <Button label={t("submit.previewPdf")} variant="link" onPress={() => router.push({ pathname: "/reader/[versionId]", params: { versionId, mode: "pages" } })} />
           </View>
           <Checkbox label={t("submit.acceptRules")} checked={rules} onChange={setRules} />
           <View style={styles.section}>

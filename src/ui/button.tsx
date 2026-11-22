@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
 
 import { colors, fonts, radius, space } from "./theme";
 
@@ -11,9 +11,10 @@ type Props = {
   busy?: boolean;
   disabled?: boolean;
   size?: "default" | "compact";
+  style?: StyleProp<ViewStyle>;
 };
 
-export function Button({ label, onPress, variant = "primary", busy = false, disabled = false, size = "default" }: Props) {
+export function Button({ label, onPress, variant = "primary", busy = false, disabled = false, size = "default", style }: Props) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -21,7 +22,7 @@ export function Button({ label, onPress, variant = "primary", busy = false, disa
       accessibilityState={{ busy, disabled: busy || disabled }}
       disabled={busy || disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.base, styles[variant], size === "compact" && styles.compact, (pressed || disabled) && styles.pressed]}
+      style={({ pressed }) => [styles.base, styles[variant], size === "compact" && styles.compact, (pressed || disabled) && styles.pressed, style]}
     >
       {busy ? (
         <ActivityIndicator color={variant === "primary" ? colors.onBurgundy : colors.burgundy} />

@@ -224,6 +224,10 @@ body.panel-open main { padding-bottom: 46vh; }
       <div class="log-box">
         <h3>Ce s-a schimbat</h3>
         <ol>
+          <li><span class="date">Versiunea 18</span><br>Textul este HTML, cu limite pe textul vizibil; <code>text_versions.image_path</code> păstrează imaginea versiunii exacte în bucketul privat <code>excerpt-images</code>. Accesul folosește un URL semnat valabil 300 de secunde. Paginile distribuite pot include o imagine opțională.</li>
+          <li><span class="date">Versiunea 17</span><br>Versiunile de text păstrează versiunea manuscrisului, paginile și scorul comparației; textul extras și calea PDF-ului cu paginile alese stau separat, în <code>share_private</code>, fără acces direct din aplicație. <code>beta_pages</code> folosește aceleași versiuni și aprobări pentru paginile distribuite tuturor sau urmăritorilor; intervalul nu poate acoperi întregul manuscris, iar gateway-ul verifică publicul sau trimiterea activă a publicației.</li>
+          <li><span class="date">Versiunea 16</span><br>Task 03.1: fiecare versiune de text are cel mult o cerere; <code>sharing_requests.created_at</code> înregistrează crearea. <code>beta_share_id</code> rămâne fără cheie externă până la implementarea paginilor beta. Deciziile sunt definitive, repetarea identică nu produce alt eveniment, iar publicarea verifică și trimiterile active apărute între timp. <code>sharing_workspace()</code> întoarce doar sursele și cererile accesibile contului.</li>
+          <li><span class="date">Versiunea 15</span><br>Task 02.3: <code>evaluations.submission_id</code> este unic; evaluarea se poate edita până la retragere. Funcția <code>submission_detail()</code> întoarce detaliile doar autorului și publicației, fără căi de stocare sau ora deschiderii. Funcția <code>author_submission_opened()</code> arată autorului doar dacă manuscrisul a fost deschis, fără data din <code>opened_at</code>, care rămâne vizibilă doar publicației.</li>
           <li><span class="date">Versiunea 14</span><br>Tabel nou <code>work_preferences</code>, vizibil doar proprietarului: steaua (favorite) și versiunea principală a unui manuscris, folosită implicit la trimitere; se golește dacă versiunea e ștearsă. Se pot șterge doar versiunile și manuscrisele netrimise.</li>
           <li><span class="date">Versiunea 13</span><br>Task 04.1 (biblioteca), reguli noi, fără coloane noi. Cărțile din catalog (<code>works.source</code> = <code>isbn_lookup</code> sau <code>manual</code>) se creează publice, cu <code>is_published = true</code>. <code>works.isbn</code> îl scrie doar serverul (căutarea ISBN), niciodată aplicația. <code>library_entries.is_public</code> se poate pune doar pentru o operă publică, iar intrarea rămâne ascunsă între conturi care s-au blocat.</li>
           <li><span class="date">Versiunea 12</span><br>Task 02.2. <code>calls</code> are și <code>updated_at</code>, pentru că un apel se poate edita după publicare. Două liste noi pentru catalog (view-uri, fără tabele noi): <code>open_calls</code> (apelurile deschise, cu numele, tipul și politica publicației) și <code>catalogue_publishers</code> (publicațiile aprobate, cu genurile lor, câte apeluri deschise au și în ce limbi). La <code>submission_materials</code>: sinopsisul și fragmentul sunt PDF-uri în <code>storage_path</code>, prezentarea autorului e text în <code>body</code>.</li>
@@ -242,6 +246,13 @@ body.panel-open main { padding-bottom: 46vh; }
       <div class="log-box">
         <h3>Decis de voi</h3>
         <ul>
+          <li>Postările și fragmentele folosesc HTML cu p, br, strong, em, u, s, blockquote, ul, ol, li, h3 și a; aplicația afișează textul nativ. Limitele sunt 3 000 și 10 000 de caractere vizibile, iar HTML-ul brut are cel mult de trei ori limita.</li>
+          <li>O postare, un fragment sau un sinopsis are cel mult o imagine; paginile distribuite nu au imagine. Schimbarea imaginii creează o versiune nouă care necesită o nouă aprobare.</li>
+          <li>Compozitorul oferă Post și Fragment; pentru fragment autorul alege manuscrisul propriu sau cartea publicată cu autor confirmat, tipul și publicul. Textul poate fi selectat din PDF sau introdus manual.</li>
+          <li>Cererile apar la trimitere: autorul vede decizia fiecărei publicații, iar publicația aprobă ori refuză textul sau paginile exacte. Citatele din manuscrise primite cer acordul autorului.</li>
+          <li>Aprobările sunt cerute numai de trimiterile active cu restricții aplicabile; în rest distribuirea se publică imediat.</li>
+          <li>Autorul poate distribui pagini alese tuturor sau urmăritorilor; restricțiile aplicabile fragmentelor cer aprobarea paginilor exacte, iar cititorii primesc numai paginile selectate.</li>
+          <li>Textul ales din PDF rămâne editabil. O potrivire de cel puțin 90% indică faptul că textul a fost găsit în fișierul încărcat, nu dovedește autoratul; altfel textul poate fi distribuit fără etichetă.</li>
           <li>Backend: Supabase (PostgreSQL).</li>
           <li>Aplicația: React Native cu Expo și React Native Web, în TypeScript.</li>
           <li>Lucrul în doi: persoana A pe manuscrise, persoana B pe comunitate și descoperire; fundația și finalul împreună.</li>
@@ -262,7 +273,7 @@ body.panel-open main { padding-bottom: 46vh; }
           <li>Cererea de cont de publicație e chiar rândul din <code>publishers</code>, cu <code>approval_status = pending</code>; fără tabel separat de cereri.</li>
           <li>Cerințele unui apel sunt 5 coloane da/nu pe <code>calls</code>.</li>
           <li>Postările și fragmentele împart tabelul <code>contents</code>, ca reacțiile și comentariile să aibă un singur loc.</li>
-          <li>Marcajul „deschis” al publicației stă separat, în <code>submission_inbox</code>, ca autorul să nu-l poată vedea.</li>
+          <li>Data deschiderii stă separat, în <code>submission_inbox</code>; autorul vede doar dacă manuscrisul a fost deschis.</li>
           <li>Locațiile folosesc PostGIS (<code>geography(Point)</code>).</li>
           <li>Citat dintr-un manuscris primit: pe lângă autor, aprobă și celelalte publicații ale căror restricții se aplică.</li>
           <li>Apelurile unei publicații neaprobate nu apar ca deschise până la aprobare.</li>
@@ -279,6 +290,7 @@ body.panel-open main { padding-bottom: 46vh; }
       <div class="log-box todo">
         <h3>Decis de mine, de confirmat</h3>
         <ol>
+          <li>La distribuire, decizia este definitivă pentru cerere; o repetare identică nu produce un eveniment nou. Publicarea se face explicit după verificarea tuturor trimiterilor active, iar textul modificat are o cerere nouă.</li>
           <li>Un apel publicat se poate edita până e anulat; trimiterile deja făcute păstrează regulile acceptate atunci (<code>accepted_policy</code>).</li>
           <li>După retragere sau respingere, publicația nu mai vede materialele trimiterii; autorul le vede în continuare.</li>
           <li>Un PDF încărcat pentru o trimitere care nu mai pleacă rămâne în bucket; păstrarea datelor nu e încă decisă.</li>
@@ -443,12 +455,12 @@ const TABLES = [
   T("works", "submission_status_history", "privat", "Istoricul schimbărilor de status. Rândurile doar se adaugă, nu se modifică.", [
     "id*|uuid|", "submission_id>submissions|uuid|", "from_status?|submission_status|gol la prima intrare", "to_status|submission_status|",
     "changed_by>accounts|uuid|autorul sau publicația", "note?|text|max 1000 caractere", "changed_at|timestamptz|implicit now()"]),
-  T("works", "submission_inbox", "privat", "Marcajul „deschis / nedeschis” pe care îl vede doar publicația. Separat, ca autorul să nu-l poată citi niciodată.", [
-    "submission_id*=submissions|uuid|", "opened_at?|timestamptz|gol = nedeschis; setat la prima citire"]),
+  T("works", "submission_inbox", "privat", "Data deschiderii este vizibilă doar publicației; autorul primește doar valoarea da/nu prin author_submission_opened().", [
+    "submission_id*=submissions|uuid|", "opened_at?|timestamptz|gol = nedeschis; setat la prima deschidere a manuscrisului"]),
   T("works", "evaluations", "privat", "Evaluarea scurtă a publicației. Obligatorie la selecție, opțională în rest.", [
     "id*|uuid|", "submission_id>submissions|uuid|", "history_id=submission_status_history?|uuid|schimbarea de status la care a fost dată",
     "stood_out?|text|ce a ieșit în evidență", "could_improve?|text|ce se poate îmbunătăți", "observations?|text|observații pentru autor", ...TS],
-    "Măcar un câmp completat; total max 2000 caractere (propunere). Fără note numerice."),
+    "Unică pe trimitere. Măcar un câmp completat; total max 2000 caractere. Editabilă până la retragere, inclusiv după selecție sau respingere. Fără note numerice."),
 
   T("community", "contents", "setari", "Baza comună pentru postări și fragmente, ca reacțiile, comentariile și raportările să aibă un singur loc.", [
     "id*|uuid|", "kind|content_kind|", "account_id>accounts|uuid|cine a publicat (persoană sau publicație)", "work_id>works?|uuid|opera aleasă explicit de autor", ...TSU,
@@ -457,21 +469,24 @@ const TABLES = [
     "content_id*=contents|uuid|", "body?|text|max 3000 caractere (propunere)", "reshare_of>contents?|uuid|conținutul redistribuit"],
     "Trebuie să aibă măcar text, o imagine sau un reshare_of."),
   T("community", "post_images", "public", "Imaginile unei postări.", [
-    "id*|uuid|", "content_id>contents|uuid|", "storage_path|text|bucket public-media; max 5 MiB (propunere)", "position|smallint|0–3: max 4 imagini (propunere)"]),
+    "id*|uuid|", "content_id>contents|uuid|", "storage_path|text|bucket public-media; max 5 MiB (propunere)", "position|smallint|0: max o imagine"]),
   T("community", "excerpts", "setari", "Fragmentul, sinopsisul sau citatul împărtășit, cu publicul ales. Îl poate publica autorul sau o publicație (ca preview).", [
-    "content_id*=contents|uuid|", "share_kind|share_kind|doar synopsis sau excerpt aici", "source|excerpt_source|de unde provine textul",
+    "content_id*=contents|uuid|", "share_kind|share_kind|synopsis, excerpt sau beta_pages (interval de pagini)", "source|excerpt_source|de unde provine textul",
     "submission_id>submissions?|uuid|completat doar dacă source = received_manuscript", "audience|audience|implicit public",
     "published_version_id>text_versions?|uuid|textul vizibil acum; gol = încă nepublicat"]),
   T("community", "text_versions", "setari", "Textul exact al unui fragment. Orice modificare e o versiune nouă, care trebuie reaprobată.", [
-    "id*|uuid|", "excerpt_id>excerpts|uuid|", "body|text|1–10 000 caractere (propunere)", "sha256|text|amprenta textului", ...TS]),
+    "id*|uuid|", "excerpt_id>excerpts|uuid|", "body|text|1–10 000 caractere (propunere)", "sha256|text|amprenta textului", "image_path?|text|imagine privată, max 5 MiB", "manuscript_version_id>manuscript_versions?|uuid|versiunea sursă", "page_start?|integer|prima pagină", "page_end?|integer|ultima pagină", "provenance_score?|double precision|proporția secvențelor găsite", ...TS]),
+  T("community", "share_private", "privat", "Textul extras și calea PDF-ului cu paginile alese, accesibile doar serverului.", [
+    "text_version_id*>text_versions|uuid|", "source_text?|text|textul extras", "pages_path?|text|calea PDF-ului derivat"]),
   T("community", "sharing_requests", "privat", "Cererea de a face public un text sau de a da pagini beta-cititorilor. O face autorul, sau o publicație care vrea să citeze dintr-un manuscris primit.", [
     "id*|uuid|", "requested_by>accounts|uuid|autorul sau publicația", "work_id>works|uuid|", "kind|share_kind|",
-    "text_version_id>text_versions?|uuid|pentru synopsis / excerpt", "beta_share_id>beta_shares?|uuid|pentru beta_pages",
+    "text_version_id>text_versions?|uuid|unic; pentru synopsis, excerpt sau interval de pagini", "beta_share_id>beta_shares?|uuid|pentru viitoarele distribuiri beta; cheia externă se adaugă la 03.4",
     "author_decision?|decision|completat doar când cere o publicație; trebuie approved", "author_decided_at?|timestamptz|", ...TS],
     "Exact unul dintre text_version_id și beta_share_id e completat. Când cere o publicație, autorul aprobă textul exact; celelalte publicații cu restricții decid în sharing_decisions."),
   T("community", "sharing_decisions", "privat", "Răspunsul fiecărei publicații care trebuie să aprobe cererea (câte unul per trimitere activă).", [
     "request_id*>sharing_requests|uuid|", "submission_id*>submissions|uuid|trimiterea care impune aprobarea", "publisher_id>publishers|uuid|",
-    "decision|decision|implicit pending", "decided_at?|timestamptz|"]),
+    "decision|decision|implicit pending", "decided_at?|timestamptz|"],
+    "Autorul vede deciziile tuturor publicațiilor; fiecare publicație vede doar propria decizie."),
   T("community", "reactions", "public", "O reacție per cont per conținut; se poate schimba sau șterge.", [
     "account_id*>accounts|uuid|persoană sau publicație", "content_id*>contents|uuid|", "kind|reaction_kind|", ...TS]),
   T("community", "comments", "public", "Comentarii și răspunsuri la comentarii.", [

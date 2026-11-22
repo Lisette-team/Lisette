@@ -6,6 +6,7 @@ import { createFakeSupabase, type FakeSupabase } from "./helpers/fake-supabase";
 const mockDeviceStorage = new Map<string, string>();
 let mockSupabase: FakeSupabase;
 
+jest.mock("@/features/manuscripts/pdf-reader", () => ({ PdfReader: () => null }));
 jest.mock("@/lib/storage", () => ({
   getItem: async (key: string) => mockDeviceStorage.get(key) ?? null,
   setItem: async (key: string, value: string) => void mockDeviceStorage.set(key, value),

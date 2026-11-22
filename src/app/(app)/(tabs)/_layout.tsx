@@ -5,6 +5,7 @@ import type { ColorValue } from "react-native";
 import { useSession } from "@/features/account/session";
 import { Icon, type IconName } from "@/ui/icon";
 import { useWide } from "@/ui/layout";
+import { InTabsContext } from "@/ui/screen";
 import { TabBar } from "@/ui/tab-bar";
 
 const icon = (name: IconName) =>
@@ -21,12 +22,13 @@ export default function TabsLayout() {
   const wide = useWide();
   const hidden =
     session?.kind === "publisher"
-      ? ["library", "manuscripts"]
+      ? ["library", "manuscripts", "profile"]
       : session?.authorEnabled
-        ? ["calls", "profile"]
-        : ["calls", "manuscripts"];
+        ? ["calls", "profile", "submissions"]
+        : ["calls", "manuscripts", "submissions"];
 
   return (
+    <InTabsContext.Provider value>
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => (wide ? null : <TabBar {...props} hidden={hidden} />)}>
       <Tabs.Screen name="home" options={{ title: t("nav.home"), tabBarIcon: icon("home") }} />
       <Tabs.Screen name="discover" options={{ title: t("nav.discover"), tabBarIcon: icon("compass") }} />
@@ -34,7 +36,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="library" options={{ title: t("nav.library"), tabBarIcon: icon("library") }} />
       <Tabs.Screen name="manuscripts" options={{ title: t("nav.manuscripts"), tabBarIcon: icon("manuscript") }} />
       <Tabs.Screen name="calls" options={{ title: t("nav.calls"), tabBarIcon: icon("calendar") }} />
+      <Tabs.Screen name="submissions" options={{ title: t("nav.submissions"), tabBarIcon: icon("send") }} />
       <Tabs.Screen name="profile" options={{ title: t("nav.profile"), tabBarIcon: icon("user") }} />
     </Tabs>
+    </InTabsContext.Provider>
   );
 }

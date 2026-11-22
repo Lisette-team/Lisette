@@ -75,13 +75,13 @@ export function uploadVersion(workId: string, file: DocumentPickerAsset, label: 
 }
 
 // The reader fetches the bytes itself with these, so the file never passes through app storage.
-export async function gatewayRequest(versionId: string) {
+export async function gatewayRequest(versionId: string, submissionId?: string, materialId?: string) {
   const { data } = await supabase.auth.getSession();
   return {
     url: `${supabaseUrl}/functions/v1/manuscript-file`,
     token: data.session?.access_token ?? "",
     apikey: supabaseAnonKey,
-    body: { versionId, purpose: "read" as const },
+    body: { versionId, submissionId, materialId, purpose: "read" as const },
   };
 }
 
@@ -111,10 +111,13 @@ export type MySubmission = {
   id: string; status: "submitted" | "in_review" | "on_hold" | "selected" | "rejected" | "withdrawn";
   submitted_at: string; status_changed_at: string; work_title: string; version_id: string;
   version_label: string | null; call_title: string; publisher_name: string;
-  publisher_kind: "publishing_house" | "literary_magazine" | "independent_editor";
+  publisher_kind: "publishing_house" | "literary_magazine" | "independent_editor"; opened: boolean;
 };
 export async function listMySubmissions(): Promise<MySubmission[]> {
   const { data, error } = await supabase.rpc("my_submissions");
   if (error) throw error;
-  return data as MySubmission[];
+  const opened = await supabase.rpc("author_submission_opened");
+  if (opened.error) throw opened.error;
+  const byId = new Map((opened.data as { submission_id: string; opened: boolean }[]).map((row) => [row.submission_id, row.opened]));
+  return (data as MySubmission[]).map((item) => ({ ...item, opened: byId.get(item.id) ?? false }));
 }

@@ -17,6 +17,14 @@ export type PostCard = {
   createdAt: string;
   updatedAt: string;
   body: string | null;
+  shareVersionId?: string | null;
+  // Set for shares from a manuscript or book; the feed names it next to the author.
+  shareKind?: "excerpt" | "synopsis" | "beta_pages" | null;
+  text_version_id?: string;
+  has_image?: boolean;
+  provenanceScore?: number | null;
+  pageStart?: number | null;
+  pageEnd?: number | null;
   workId: string | null;
   workTitle: string | null;
   images: string[];
@@ -54,7 +62,7 @@ export function withReaction(post: PostCard, kind: ReactionKind | null): PostCar
 // Proposed limits from the schema page; the database enforces the same ones.
 export const MAX_POST_LENGTH = 3000;
 export const MAX_COMMENT_LENGTH = 2000;
-export const MAX_IMAGES = 4;
+export const MAX_IMAGES = 1;
 
 const BUCKET = "public-media";
 export const FEED_PAGE_SIZE = 20;
@@ -112,11 +120,11 @@ export async function prepareImage(asset: ImagePickerAsset): Promise<PreparedIma
 export class ImageUploadError extends Error {}
 
 // Uploads under the poster's own folder, which is the only place the storage policy allows.
-async function uploadImage(userId: string, image: PreparedImage): Promise<string> {
-  const path = `${userId}/posts/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+export async function uploadImage(userId: string, image: PreparedImage, bucket = BUCKET, folder = "posts"): Promise<string> {
+  const path = `${userId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
   try {
     const body = await (await fetch(image.uri)).arrayBuffer();
-    const { error } = await supabase.storage.from(BUCKET).upload(path, body, { contentType: "image/jpeg" });
+    const { error } = await supabase.storage.from(bucket).upload(path, body, { contentType: "image/jpeg" });
     if (error) throw error;
   } catch (e) {
     throw new ImageUploadError(e instanceof Error ? e.message : String(e));

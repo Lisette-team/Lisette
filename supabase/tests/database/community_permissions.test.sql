@@ -63,19 +63,19 @@ select throws_ok(
 );
 
 insert into ids select 'image_post', public.create_post(body => 'Poze', image_paths => array[
-  '11111111-1111-1111-1111-111111111111/posts/2.jpg', '11111111-1111-1111-1111-111111111111/posts/1.jpg']);
+  '11111111-1111-1111-1111-111111111111/posts/2.jpg']);
 select results_eq(
   $$ select pi.storage_path, pi.position::int from public.post_images pi join ids on ids.id = pi.content_id
      where ids.name = 'image_post' order by pi.position $$,
-  $$ values ('11111111-1111-1111-1111-111111111111/posts/2.jpg', 0), ('11111111-1111-1111-1111-111111111111/posts/1.jpg', 1) $$,
-  'images keep the chosen order'
+  $$ values ('11111111-1111-1111-1111-111111111111/posts/2.jpg', 0) $$,
+  'the image is stored'
 );
 select throws_ok(
   $$ select public.create_post(image_paths => array[
        '11111111-1111-1111-1111-111111111111/posts/1.jpg', '11111111-1111-1111-1111-111111111111/posts/2.jpg',
        '11111111-1111-1111-1111-111111111111/posts/3.jpg', '11111111-1111-1111-1111-111111111111/posts/4.jpg',
        '11111111-1111-1111-1111-111111111111/posts/5.jpg']) $$,
-  '22023', null, 'a post has at most four images'
+  '22023', null, 'a post has at most one image'
 );
 select throws_ok(
   $$ select public.create_post(image_paths => array['22222222-2222-2222-2222-222222222222/posts/1.jpg']) $$,

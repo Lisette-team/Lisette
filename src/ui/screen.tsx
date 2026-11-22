@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import type { ReactNode, Ref } from "react";
+import { createContext, useContext, type ReactNode, type Ref } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { blurEditorsOutside } from "./editor-focus";
 import { Icon } from "./icon";
 import { colors, contentMaxWidth, fonts, gutter, space } from "./theme";
 
@@ -29,9 +30,13 @@ type Props = {
   pinFooter?: boolean;
 };
 
+// Set around the tab navigator: its tab bar already pads the bottom inset, so tab screens skip it.
+export const InTabsContext = createContext(false);
+
 export function Screen({ title, backLabel, action, children, footer, scrollRef, pinFooter = false }: Props) {
+  const inTabs = useContext(InTabsContext);
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={inTabs ? ["top", "left", "right"] : undefined}>
       {/* Android draws edge to edge, so the window no longer shrinks for the keyboard: make room here. */}
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "web" ? undefined : "padding"}>
         {title ? (
@@ -50,7 +55,7 @@ export function Screen({ title, backLabel, action, children, footer, scrollRef, 
             {action}
           </TopBar>
         ) : null}
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" onTouchStart={(event) => blurEditorsOutside(event.nativeEvent.pageX, event.nativeEvent.pageY)}>
           <View style={styles.column}>
             <View style={styles.body}>{children}</View>
             {footer && !pinFooter ? <View testID="screen-footer" style={styles.footer}>{footer}</View> : null}

@@ -12,7 +12,7 @@ export function Segmented<T extends string>({ options, value, onChange, size = "
   size?: "default" | "compact";
 }) {
   return (
-    <View accessibilityRole="tablist" style={styles.track}>
+    <View accessibilityRole="tablist" style={segmentedStyles.track}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -23,9 +23,9 @@ export function Segmented<T extends string>({ options, value, onChange, size = "
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
             hitSlop={size === "compact" ? { top: 4, bottom: 4 } : undefined}
-            style={[styles.segment, size === "compact" && styles.compactSegment, selected && styles.selected]}
+            style={[segmentedStyles.segment, size === "compact" && segmentedStyles.compactSegment, selected && segmentedStyles.selected]}
           >
-            <Text style={[styles.label, size === "compact" && styles.compactLabel, selected && styles.labelSelected]}>{option.label}</Text>
+            <Text style={[segmentedStyles.label, size === "compact" && segmentedStyles.compactLabel, selected && segmentedStyles.labelSelected]}>{option.label}</Text>
           </Pressable>
         );
       })}
@@ -33,7 +33,7 @@ export function Segmented<T extends string>({ options, value, onChange, size = "
   );
 }
 
-const styles = StyleSheet.create({
+export const segmentedStyles = StyleSheet.create({
   track: { flexDirection: "row", padding: 4, borderRadius: radius.pill, backgroundColor: colors.surfaceMuted },
   segment: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.pill },
   compactSegment: { minHeight: 36 },

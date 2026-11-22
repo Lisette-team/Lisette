@@ -11,7 +11,7 @@ import { colors, fonts } from "@/ui/theme";
 
 import { useSession } from "./session";
 
-type Item = { name: string; href: "/home" | "/discover" | "/library" | "/manuscripts" | "/calls" | "/profile"; icon: IconName };
+type Item = { name: string; href: "/home" | "/discover" | "/library" | "/manuscripts" | "/calls" | "/profile" | "/submissions"; icon: IconName };
 
 const ITEMS: Item[] = [
   { name: "home", href: "/home", icon: "home" },
@@ -19,6 +19,7 @@ const ITEMS: Item[] = [
   { name: "library", href: "/library", icon: "library" },
   { name: "manuscripts", href: "/manuscripts", icon: "manuscript" },
   { name: "calls", href: "/calls", icon: "calendar" },
+  { name: "submissions", href: "/submissions", icon: "send" },
   { name: "profile", href: "/profile", icon: "user" },
 ];
 
@@ -74,8 +75,8 @@ export function SideNav() {
   const first = pathname.split("/").filter(Boolean)[0] ?? "home";
   const current = SECTION[first] ?? first;
   const items = ITEMS.filter((item) => {
-    if (session?.kind === "publisher") return item.name !== "library" && item.name !== "manuscripts";
-    return item.name !== "calls" && (item.name !== "manuscripts" || session?.authorEnabled);
+    if (session?.kind === "publisher") return item.name !== "library" && item.name !== "manuscripts" && item.name !== "profile";
+    return item.name !== "calls" && item.name !== "submissions" && (item.name !== "manuscripts" || session?.authorEnabled);
   });
 
   return (

@@ -18,34 +18,8 @@
 - A screen showing a lock, a fingerprint prompt or an upload record designs a protection state. It is not evidence
   that the protection exists, and device or upload verification is never proof of authorship.
 
-## Source and regeneration
-| What | Where |
-|---|---|
-| Generator (source of truth) | `C:\Users\Ana Maria\Documents\Lisette-figcraft\generator_v6\`, built with `python v3_build.py` |
-| Built file | `Lisette-figcraft\out\Lisette-redesign-v6.figcraft` (13 pages; screens on pages 10–17) |
-| Page boards | `Lisette-figcraft\out\share\redesign-v6\*.png` |
-| Renderer | FigCraft 0.7.0 `figcraft-cli.exe`, the same engine as the `figcraft` MCP server |
-
-Everything is generated outside this repository. To refresh this folder:
-1. If the generator changed, rebuild in `Lisette-figcraft` with `python v3_build.py`. Page and node IDs change on
-   every rebuild, so match frames by name, never by a stored ID. When using the MCP server, force-close and reopen the
-   file first; it caches open documents.
-2. Screens: for each top-level frame on pages 10–17, run
-   `figcraft-cli export <file> -o <png> --format png --scale <2 for phone, 1 for tablet and web> --node <id>`.
-   Exports are transparent, so composite each one onto its screen colour: Paper `#F6EFE3`, or Night burgundy
-   `#3A121C` for Seara frames. The MCP server may only write inside `Lisette-figcraft`; the CLI can write here.
-3. Boards: copy the 13 PNGs from `out/share/redesign-v6/`.
-4. Illustrations: from `generator_v6`, call `rd_art.write_svgs("<repo>/docs/design/assets/illustrations", rd_art.ART)`.
-   It clears and rewrites the folder's SVGs. Run Python with `-B` so nothing is written to the generator's `__pycache__`.
-5. Icons: wrap each body in `lib.ICONS` and `rd_comps.EXTRA` in a 24×24 SVG with `fill="none"`,
-   `stroke="currentColor"`, `stroke-width="1.75"` and round caps and joins.
-6. Tokens: read `rd_ds.COLORS`, `rd_ds.NUM`, `rd_ds.TYPE` and `rd_ds.effect_styles()`, and check them against
-   FigCraft's `variable.export`.
-
-The helper scripts used for the 2026-10-21 export were kept outside the repository.
-
-**The boards may lag the file.** The board PNGs were written at 12:34 on 2026-10-21 and the `.figcraft` file was saved
-at 18:28. The PNGs in `screens/` come from the file and are the more current view.
+## Source
+Generated outside this repository with FigCraft (generator v6). Regenerate there, never by hand here. The PNGs in `screens/` are more current than the `boards/`.
 
 ## Screens
 132 top-level frames: 116 phone (360 px wide, exported at 2×), 3 tablet (1280×800, 1×) and 13 web
@@ -331,8 +305,11 @@ b) **Soft shadows on floating elements.** v6 defines two effect styles, `Umbră/
    screen pages only `Umbră/plutitor` is applied: to the bottom navigation bars, the central "+" button and bottom
    sheets. `brand/identity.md` lists "Gradients, glows and drop shadows" under
    *What to avoid*. That list sits in §02, *Logo Direction*, so whether it also covers the interface is for the user to
-   confirm. **Decided 2026-10-28 for the bottom bar and its "+" button:** use `Umbră/plutitor` as drawn. Cards and
-   bottom sheets are still undecided.
+   confirm. **Decided 2026-10-28 for the bottom bar and its "+" button:** use `Umbră/plutitor` as drawn. **Decided
+   2026-11-22 for cards:** no shadow. Cards (catalogue calls and publications, the composer's source card) keep a
+   fine hairline border on `surface`; the excerpt frame is `surface` with a 1 px `line-soft` border, like the v6
+   "Textul ales" box. The v6 rule "only floating elements have a shadow" holds.
+   Floating elements that keep a shadow: the bottom bar and "+", drop-down menus. Bottom sheets are still undecided.
 
 c) **A dark theme only in the reader (Seara).** v6 makes Paper the only app theme. The only Night burgundy screen is
    the reading mode that ambient light switches on (S-53 Seara); evening otherwise changes only the Home header. `docs/product/screens.md` S-06 asks for an appearance

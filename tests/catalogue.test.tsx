@@ -81,7 +81,9 @@ const filtersOf = (mock: jest.Mock) => mock.mock.calls.at(-1)[0];
 describe("catalogue", () => {
   test("Discover opens on Publications, with each publication's genres", async () => {
     expect(await screen.findByText("Publicăm proză contemporană.")).toBeOnTheScreen();
-    expect(await screen.findByText("Novel · Romanian · 2 open calls")).toBeOnTheScreen();
+    expect(await screen.findByText("2 open calls")).toBeOnTheScreen();
+    expect(screen.getByText("Novel")).toBeOnTheScreen();
+    expect(screen.getByText("Romanian")).toBeOnTheScreen();
     expect(screen.getByRole("tab", { name: "Publications", selected: true })).toBeOnTheScreen();
   });
 

@@ -18,6 +18,7 @@ jest.mock("@/lib/supabase", () => ({
     return mockSupabase;
   },
 }));
+jest.mock("@/features/manuscripts/pdf-reader", () => ({ PdfReader: () => null }));
 jest.mock("@/ui/launch-video", () => ({ LaunchVideo: () => null }));
 let mockWide = false;
 jest.mock("@/ui/layout", () => ({ ...jest.requireActual("@/ui/layout"), useWide: () => mockWide }));
@@ -58,11 +59,11 @@ describe("app_menu", () => {
     await waitFor(() => expect(app.getPathname()).toBe("/profile"));
   });
 
-  test("a publication gets Home, Discover, Calls and Profile, around the + button", async () => {
+  test("a publication gets Home, Discover, Calls and Submissions, around the + button", async () => {
     await signedIn(false, "/home", "publisher");
 
     expect(await screen.findByRole("tab", { name: "Calls" })).toBeOnTheScreen();
-    expect(tabNames()).toEqual(["Home", "Discover", "Calls", "Profile"]);
+    expect(tabNames()).toEqual(["Home", "Discover", "Calls", "Submissions"]);
   });
 
   test("a publication's Profile offers no writer profile", async () => {
@@ -95,7 +96,7 @@ describe("wide_screen_shell", () => {
     mockWide = true;
     const app = await signedIn(false, "/home", "publisher");
 
-    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Calls", "Profile"]));
+    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Calls", "Submissions"]));
     await fireEvent.press(screen.getByRole("tab", { name: "Calls" }));
     await waitFor(() => expect(app.getPathname()).toBe("/calls"));
   });
@@ -150,8 +151,8 @@ describe("wide_screen_pages", () => {
     mockWide = true;
     await signedIn(false, "/create");
 
-    await waitFor(() => expect(tabNames()).toEqual(["Home", "Discover", "Library", "Profile"]));
-    for (const tab of screen.getAllByRole("tab")) expect(tab).not.toBeSelected();
+    await waitFor(() => expect(tabNames().slice(0, 4)).toEqual(["Home", "Discover", "Library", "Profile"]));
+    for (const tab of screen.getAllByRole("tab").slice(0, 4)) expect(tab).not.toBeSelected();
   });
 
   test("phones keep the wordmark and the + button", async () => {

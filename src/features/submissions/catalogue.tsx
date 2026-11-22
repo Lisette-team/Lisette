@@ -1,16 +1,16 @@
 import { router } from "expo-router";
 import { formatDate } from "@/i18n/format";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { CALL_LANGUAGES, listGenres, type Genre } from "@/features/calls/api";
+import { hash } from "@/ui/avatar";
 import { FilterPill } from "@/ui/filter-pill";
-import { Icon } from "@/ui/icon";
-import { ListRow } from "@/ui/list-row";
+import { Icon, type IconName } from "@/ui/icon";
 import { ErrorText } from "@/ui/screen";
 import { Segmented } from "@/ui/segmented";
-import { colors, fonts, radius, space } from "@/ui/theme";
+import { colors, fonts, radius, space, tints } from "@/ui/theme";
 
 import {
   listOpenCalls,
@@ -42,6 +42,79 @@ function Tick({ checked }: { checked: boolean }) {
         {checked ? <Icon name="check" color={colors.onBurgundy} size={18} /> : null}
       </View>
     </View>
+  );
+}
+
+type Chip = { label: string; icon: IconName; tone?: "gold" | "burgundy" };
+
+// A publication's letter on a warm tint, standing in for a logo. Skips a leading "Editura"/"Revista".
+function Monogram({ name, muted }: { name: string; muted?: boolean }) {
+  const letter = name.replace(/^(editura|revista)\s+/i, "").charAt(0).toUpperCase();
+  const tint = tints[hash(name) % tints.length];
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[styles.monogram, { backgroundColor: muted ? colors.surfaceMuted : tint }]}
+    >
+      <Text style={[styles.monogramText, muted && styles.mutedText]}>{letter}</Text>
+    </View>
+  );
+}
+
+// One call or publication: monogram, serif title, two lines of description and coloured facts as chips.
+function Card({ name, title, subtitle, body, chips, muted, selected, right, onPress, ...a11y }: {
+  name: string;
+  title: string;
+  subtitle: string;
+  body?: string | null;
+  chips: Chip[];
+  muted?: boolean;
+  selected?: boolean;
+  right?: ReactNode;
+  onPress(): void;
+  accessibilityRole?: "checkbox";
+  accessibilityState?: { checked: boolean };
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={[title, subtitle, ...chips.map((chip) => chip.label)].join(", ")}
+      {...a11y}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        muted && styles.cardMuted,
+        selected && styles.cardSelected,
+        pressed && styles.cardPressed,
+      ]}
+    >
+      <View style={styles.cardTop}>
+        <Monogram name={name} muted={muted} />
+        <View style={styles.cardHeading}>
+          <Text style={[styles.cardTitle, muted && styles.mutedText]}>{title}</Text>
+          <Text style={styles.cardSubtitle}>{subtitle}</Text>
+        </View>
+        {right ?? <Icon name="chevron" color={colors.inkMuted} size={20} />}
+      </View>
+      {body ? (
+        <Text style={styles.cardBody} numberOfLines={2}>
+          {body}
+        </Text>
+      ) : null}
+      <View style={styles.chips}>
+        {chips.map((chip) => (
+          <View
+            key={chip.label}
+            style={[styles.chip, chip.tone === "gold" && styles.chipGold, chip.tone === "burgundy" && styles.chipBurgundy]}
+          >
+            <Icon name={chip.icon} color={chip.tone === "burgundy" ? colors.burgundy : colors.inkMuted} size={14} />
+            <Text style={[styles.chipText, chip.tone === "burgundy" && styles.chipTextBurgundy]}>{chip.label}</Text>
+          </View>
+        ))}
+      </View>
+    </Pressable>
   );
 }
 
@@ -93,7 +166,7 @@ export function Catalogue({ initialTab, selectable }: Props) {
       .map(genreName)
       .join(", ");
   const languageList = (codes: string[]) => codes.map((code) => t(`submit.lang_${code}`)).join(", ");
-  const line = (...parts: (string | false)[]) => parts.filter(Boolean).join(" · ");
+  const chips = (...items: (Chip | false)[]) => items.filter((item): item is Chip => !!item && !!item.label);
 
   function openPublication(publication: CataloguePublisher) {
     setPublisherName(publication.name);
@@ -157,9 +230,12 @@ export function Catalogue({ initialTab, selectable }: Props) {
       </View>
 
       {error ? <ErrorText>{error}</ErrorText> : null}
+      {!error && (tab === "calls" ? calls : publications) === null ? (
+        <ActivityIndicator accessibilityLabel={t("common.loading")} color={colors.burgundy} style={styles.loading} />
+      ) : null}
 
       {tab === "calls" ? (
-        <View>
+        <View style={styles.list}>
           {filters.publisherId ? (
             <View style={styles.note}>
               <Text style={styles.noteText} numberOfLines={1}>
@@ -182,15 +258,20 @@ export function Catalogue({ initialTab, selectable }: Props) {
             const label = `${call.title}, ${call.publisher_name}`;
             const checked = selectable?.selected.has(call.id) ?? false;
             return (
-              <ListRow
+              <Card
                 key={call.id}
+                name={call.publisher_name}
                 title={call.title}
-                subtitle={line(call.publisher_name, t(`submit.kind_${call.publisher_kind}`))}
-                body={call.description ?? undefined}
-                meta={line(
-                  call.closes_at ? t("submit.until", { date: date(call.closes_at) }) : t("submit.alwaysOpen"),
-                  languageList(call.accepted_languages),
-                  call.genre_ids.length ? genreList(call.genre_ids) : t("submit.anyGenre"),
+                subtitle={`${call.publisher_name} · ${t(`submit.kind_${call.publisher_kind}`)}`}
+                body={call.description}
+                chips={chips(
+                  {
+                    label: call.closes_at ? t("submit.until", { date: date(call.closes_at) }) : t("submit.alwaysOpen"),
+                    icon: "calendar",
+                    tone: "gold",
+                  },
+                  { label: languageList(call.accepted_languages), icon: "globe" },
+                  { label: call.genre_ids.length ? genreList(call.genre_ids) : t("submit.anyGenre"), icon: "book" },
                 )}
                 selected={checked}
                 onPress={selectable ? () => selectable.onToggle(call) : () => router.push(`/open-call/${call.id}`)}
@@ -203,20 +284,25 @@ export function Catalogue({ initialTab, selectable }: Props) {
           })}
         </View>
       ) : (
-        <View>
+        <View style={styles.list}>
           {publications?.length === 0 ? empty(t("submit.noPublications")) : null}
           {publications?.map((publication) => (
-            <ListRow
+            <Card
               key={publication.id}
+              name={publication.name}
               title={publication.name}
               subtitle={t(`submit.kind_${publication.kind}`)}
-              body={publication.intro ?? undefined}
-              meta={line(
-                publication.genre_ids.length > 0 && genreList(publication.genre_ids),
-                languageList(publication.languages),
+              body={publication.intro}
+              chips={chips(
                 publication.open_call_count > 0
-                  ? t("submit.openCallCount", { count: publication.open_call_count })
-                  : t("submit.notOpen"),
+                  ? {
+                      label: t("submit.openCallCount", { count: publication.open_call_count }),
+                      icon: "send",
+                      tone: "burgundy",
+                    }
+                  : { label: t("submit.notOpen"), icon: "info" },
+                publication.genre_ids.length > 0 && { label: genreList(publication.genre_ids), icon: "book" },
+                { label: languageList(publication.languages), icon: "globe" },
               )}
               muted={publication.open_call_count === 0}
               onPress={() => openPublication(publication)}
@@ -230,6 +316,41 @@ export function Catalogue({ initialTab, selectable }: Props) {
 
 const styles = StyleSheet.create({
   wrapper: { gap: space.md },
+  list: { gap: space.md },
+  loading: { paddingVertical: space.xl },
+  card: {
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.hairline,
+    backgroundColor: colors.surface,
+  },
+  cardMuted: { backgroundColor: "transparent" },
+  cardSelected: { borderWidth: 1.5, borderColor: colors.burgundy, backgroundColor: colors.primarySoft },
+  cardPressed: { backgroundColor: colors.pressed },
+  cardTop: { flexDirection: "row", alignItems: "center", gap: space.md },
+  cardHeading: { flex: 1, gap: 2 },
+  cardTitle: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 24, color: colors.ink },
+  cardSubtitle: { fontFamily: fonts.ui, fontSize: 13, lineHeight: 18, color: colors.inkMuted },
+  cardBody: { fontFamily: fonts.reading, fontSize: 15, lineHeight: 23, color: colors.ink },
+  monogram: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  monogramText: { fontFamily: fonts.heading, fontSize: 24, color: colors.burgundy },
+  mutedText: { color: colors.inkMuted },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: space.xs },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+  },
+  chipGold: { backgroundColor: colors.goldSoft },
+  chipBurgundy: { backgroundColor: colors.primarySoft },
+  chipText: { fontFamily: fonts.uiMedium, fontSize: 12, color: colors.ink },
+  chipTextBurgundy: { color: colors.burgundy },
   search: {
     flexDirection: "row",
     alignItems: "center",

@@ -157,4 +157,53 @@ const item = (callId: string, versionId: string): SubmitItem => ({
     expect(a).toMatchObject({ status: "sent" });
     expect(b).toEqual(a);
   });
+  test("recipient file access follows status and records opening", async () => {
+    const versionId = await newVersion(author, "Citire");
+    const call = await openCall(first, "Citire");
+    const [sent] = await submitBatch(author.client, [item(call, versionId)]);
+    if (sent.status !== "sent") throw new Error("submission failed");
+    const read = (purpose: string) => fetch(`${url}/functions/v1/manuscript-file`, {
+      method: "POST", headers: { apikey: anonKey, Authorization: `Bearer ${first.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ versionId, submissionId: sent.submissionId, purpose }),
+    });
+    expect((await read("read")).status).toBe(200);
+    const marker = await first.client.from("submission_inbox").select("opened_at").eq("submission_id", sent.submissionId).single();
+    expect(marker.data?.opened_at).toBeTruthy();
+    expect((await first.client.from("submissions").select("status").eq("id", sent.submissionId).single()).data?.status).toBe("submitted");
+    expect((await read("read")).status).toBe(200);
+    expect((await first.client.from("submission_inbox").select("opened_at").eq("submission_id", sent.submissionId).single()).data?.opened_at).toBe(marker.data?.opened_at);
+    expect((await first.client.rpc("transition_submission", { submission_id: sent.submissionId, target: "on_hold" })).error).toBeNull();
+    expect((await read("read")).status).toBe(200);
+    expect((await read("download")).status).toBe(403);
+    expect((await author.client.rpc("withdraw_submission", { submission_id: sent.submissionId })).error).toBeNull();
+    expect((await read("read")).status).toBe(403);
+  });
+
+  test("every status protects manuscript and material independently for each recipient", async () => {
+    const versionId = await newVersion(author, "Două publicații");
+    const calls = await Promise.all([openCall(first, "Primul"), openCall(second, "Al doilea")]);
+    const outcomes = await submitBatch(author.client, calls.map((call) => item(call, versionId)));
+    if (outcomes[0].status !== "sent" || outcomes[1].status !== "sent") throw new Error("submission failed");
+    const a = outcomes[0].submissionId; const b = outcomes[1].submissionId;
+    const uploaded = await fetch(`${url}/functions/v1/manuscript-upload?purpose=material`, {
+      method: "POST", headers: { apikey: anonKey, Authorization: `Bearer ${author.token}`, "Content-Type": "application/pdf" }, body: onePagePdf(),
+    });
+    const { storagePath } = await uploaded.json();
+    const material = await adminClient().from("submission_materials").insert({ submission_id: a, kind: "sample", storage_path: storagePath }).select("id").single();
+    if (material.error) throw material.error;
+    const request = (session: Session, submissionId: string, purpose: string, materialId?: string) => fetch(`${url}/functions/v1/manuscript-file`, {
+      method: "POST", headers: { apikey: anonKey, Authorization: `Bearer ${session.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ versionId, submissionId, materialId, purpose }),
+    });
+    for (const [status, read, download] of [["submitted", 200, 200], ["in_review", 200, 200], ["on_hold", 200, 403], ["selected", 200, 200], ["rejected", 403, 403], ["withdrawn", 403, 403]] as const) {
+      const changed = await adminClient().from("submissions").update({ status }).eq("id", a); if (changed.error) throw changed.error;
+      for (const materialId of [undefined, material.data.id]) {
+        expect((await request(first, a, "read", materialId)).status).toBe(read);
+        expect((await request(first, a, "download", materialId)).status).toBe(download);
+      }
+    }
+    expect((await request(second, b, "read")).status).toBe(200);
+    expect((await request(second, b, "download")).status).toBe(200);
+  });
+
 });

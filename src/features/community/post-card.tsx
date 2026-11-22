@@ -4,6 +4,8 @@ import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View, type HostInstance } from "react-native";
 
+import { ExcerptImage, isPageRangeBody, PostBody } from "@/features/sharing/rich-text";
+import { PageShareCover, ShareReader } from "@/features/sharing/share-reader";
 import { Avatar } from "@/ui/avatar";
 import { Dialog } from "@/ui/dialog";
 import { Icon, type IconName } from "@/ui/icon";
@@ -38,8 +40,13 @@ export function AuthorRow({
     <View style={styles.authorRow}>
       <Avatar id={post.accountId} size={size} />
       <View style={styles.authorText}>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text style={styles.name} numberOfLines={post.shareKind ? 3 : 1}>
           {post.authorName}
+          {post.shareKind && post.workTitle ? (
+            <Text style={styles.action}>
+              {" "}{t(`sharing.shared_${post.shareKind}`)} <Text style={styles.workTitle}>{post.workTitle}</Text>
+            </Text>
+          ) : null}
         </Text>
         <Text style={styles.meta}>{meta.join(" · ")}</Text>
         {under}
@@ -51,11 +58,24 @@ export function AuthorRow({
 
 export function PostContent({ post }: { post: PostCard }) {
   const { t } = useTranslation();
+  const [reading, setReading] = useState(false);
+  const pages = post.shareKind === "beta_pages";
+  // A page share's text is the author's own words; a bare "p. 3–7" was only there for the server.
+  const body = post.body && !(pages && isPageRangeBody(post.body)) ? post.body : null;
   return (
     <>
-      {post.body ? <Text style={styles.body}>{post.body}</Text> : null}
+      {/* Page shares are a page range, not a quoted excerpt. */}
+      {body ? <PostBody body={body} title={post.workTitle} pageStart={pages ? null : post.pageStart} pageEnd={post.pageEnd} verified={(post.provenanceScore ?? 0) >= 0.9} reading={post.shareKind === "synopsis" || post.shareKind === "excerpt"} synopsis={post.shareKind === "synopsis"} /> : null}
+      {pages && post.shareVersionId && post.pageStart && post.pageEnd ? (
+        <>
+          <PageShareCover title={post.workTitle ?? ""} pageStart={post.pageStart} pageEnd={post.pageEnd} onPress={() => setReading(true)} />
+          <ShareReader shareVersionId={reading ? post.shareVersionId : null} title={post.workTitle} onClose={() => setReading(false)} />
+        </>
+      ) : null}
+      {post.has_image && post.text_version_id ? <ExcerptImage textVersionId={post.text_version_id} /> : null}
       {post.images.length ? <ImageGrid paths={post.images} /> : null}
-      {post.workTitle ? (
+      {/* A share names its work next to the author instead. */}
+      {post.workTitle && !post.shareKind ? (
         <View style={styles.linked}>
           <Icon name="book" color={colors.inkMuted} size={18} />
           <Text style={styles.meta}>{t("community.linkedTo", { title: post.workTitle })}</Text>
@@ -345,6 +365,9 @@ const styles = StyleSheet.create({
   authorRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   authorText: { flex: 1, gap: 2 },
   name: { fontFamily: fonts.uiMedium, fontSize: 16, color: colors.ink },
+  action: { fontFamily: fonts.ui, fontSize: 14, color: colors.inkMuted },
+  // The work's title in italics, the way a book title is set, instead of quotation marks.
+  workTitle: { fontFamily: fonts.headingItalic, fontSize: 15, color: colors.ink },
   meta: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: colors.inkMuted },
   body: { fontFamily: fonts.ui, fontSize: 16, lineHeight: 23, color: colors.ink },
   images: { alignSelf: "stretch", flexDirection: "row", flexWrap: "wrap", gap: space.sm },

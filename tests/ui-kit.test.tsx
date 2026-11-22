@@ -28,7 +28,7 @@ describe("ui kit", () => {
     expect(onChange).toHaveBeenCalledWith("publications");
   });
 
-  test("FilterPill shows its value and opens a sheet to pick another", async () => {
+  test("FilterPill shows its value and drops a menu to pick another", async () => {
     const onChange = jest.fn();
     const view = await render(
       <FilterPill

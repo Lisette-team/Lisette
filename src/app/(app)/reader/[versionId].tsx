@@ -5,17 +5,17 @@ import { AppState, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { confirmPrivateAction } from "@/features/manuscripts/device-auth";
-import { PdfReader } from "@/features/manuscripts/pdf-reader";
-import type { ReaderMessage } from "@/features/manuscripts/reader-html";
+import { BookReader } from "@/features/manuscripts/book-reader";
 import { Button } from "@/ui/button";
 import { ErrorText } from "@/ui/screen";
 import { colors, fonts, space } from "@/ui/theme";
 
-// S-23 for the owner: unlock with the phone's lock, then read. Signing out unmounts this screen
-// (the private layout redirects), which drops the reader and its in-memory copy.
+// S-23 for the owner: unlock with the phone's lock, then read in the page-turning reader. Signing out
+// unmounts this screen (the private layout redirects), which drops the reader and its in-memory copy.
+// `mode=pages` opens on the original pages (the preview of what is sent); otherwise Text mode first.
 export default function Reader() {
   const { t } = useTranslation();
-  const { versionId } = useLocalSearchParams<{ versionId: string }>();
+  const { versionId, title, mode } = useLocalSearchParams<{ versionId: string; title?: string; mode?: string }>();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,14 +41,22 @@ export default function Reader() {
     return () => subscription.remove();
   }, []);
 
-  const onMessage = useCallback(
-    (message: ReaderMessage) => {
-      if (message.type !== "error") return;
+  const onError = useCallback(
+    (status: number) => {
       setOpen(false);
-      setError(message.status === 403 ? t("manuscripts.notAvailable") : t("errors.generic"));
+      setError(status === 403 ? t("manuscripts.notAvailable") : t("errors.generic"));
     },
     [t],
   );
+  const close = () => (router.canGoBack() ? router.back() : router.replace("/manuscripts"));
+
+  if (open) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <BookReader title={title} versionId={versionId} defaultMode={mode === "pages" ? "pages" : "text"} onClose={close} onError={onError} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -60,14 +68,10 @@ export default function Reader() {
         ) : null}
         <Text style={styles.note}>{t("manuscripts.readOnly")}</Text>
       </View>
-      {open ? (
-        <PdfReader versionId={versionId} onMessage={onMessage} />
-      ) : (
-        <View style={styles.locked}>
-          {error ? <ErrorText>{error}</ErrorText> : <Text style={styles.hint}>{t("manuscripts.deviceAuthHint")}</Text>}
-          <Button label={t("manuscripts.unlock")} onPress={unlock} />
-        </View>
-      )}
+      <View style={styles.locked}>
+        {error ? <ErrorText>{error}</ErrorText> : <Text style={styles.hint}>{t("manuscripts.deviceAuthHint")}</Text>}
+        <Button label={t("manuscripts.unlock")} onPress={unlock} />
+      </View>
     </SafeAreaView>
   );
 }
