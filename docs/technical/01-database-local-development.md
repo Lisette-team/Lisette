@@ -83,11 +83,11 @@ insert into public.admins (user_id) select id from auth.users where email = 'you
 
 | Email | Password | Kind | Calls |
 |---|---|---|---|
-| `editura@lisette.local` | `local-only-password-1` | publishing house | one with a deadline, one always open |
-| `revista@lisette.local` | `local-only-password-1` | literary magazine | one closed, one draft |
-| `editor@lisette.local` | `local-only-password-1` | independent editor | one always open (genre and synopsis required) |
+| `editura@lisette.local` | `parola_test` | publishing house | one with a deadline, one always open |
+| `revista@lisette.local` | `parola_test` | literary magazine | one closed, one draft |
+| `editor@lisette.local` | `parola_test` | independent editor | one always open (genre and synopsis required) |
 
-The seed has no writers or manuscripts: create a writer in the app.
+The seed also has a reader and a writer (with the phone already set). All seeded logins are listed in `02-test-accounts.md`. It has no manuscripts.
 
 These logins have a password that is in git. Never load the seed into a hosted database: no `supabase db reset --linked`, no `supabase db push --include-seed`, and turn the seed off for preview branches if Supabase Branching is ever enabled.
 

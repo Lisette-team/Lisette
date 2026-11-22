@@ -1,14 +1,14 @@
 -- Local only: `supabase db reset` loads this file; it is never pushed to the hosted project.
--- Three approved publications (one of each kind) with calls, so calls, the catalogue and submissions
--- can be tried before publication sign-up exists. Password for all three: local-only-password-1.
--- No writers or manuscripts here: writers are created in the app, and their files need the upload function.
+-- Three approved publications (one of each kind) with calls, a reader and a writer.
+-- Password for all of them: parola_test. Accounts are listed in docs/technical/02-test-accounts.md.
+-- No manuscripts here: their files need the upload function.
 -- Never run this against a hosted database (`db reset --linked`, `db push --include-seed`, preview branches).
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
   confirmation_token, recovery_token, email_change, email_change_token_new)
 select '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
-  extensions.crypt('local-only-password-1', extensions.gen_salt('bf')), now(),
+  extensions.crypt('parola_test', extensions.gen_salt('bf')), now(),
   '{"provider": "email", "providers": ["email"]}',
   jsonb_build_object('display_name', u.name, 'locale', 'ro', 'account_kind', 'publisher', 'publisher_kind', u.kind),
   now(), now(), '', '', '', ''
@@ -17,6 +17,27 @@ from (values
   ('d0000000-0000-4000-8000-000000000002', 'revista@lisette.local', 'Revista Vatra Nouă', 'literary_magazine'),
   ('d0000000-0000-4000-8000-000000000003', 'editor@lisette.local', 'Ioana Marin, editor independent', 'independent_editor')
 ) u (id, email, name, kind);
+
+-- Two people: a reader (author profile off) and a writer (author profile on, phone set so it can submit).
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new)
+select '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
+  extensions.crypt('parola_test', extensions.gen_salt('bf')), now(),
+  '{"provider": "email", "providers": ["email"]}',
+  jsonb_build_object('display_name', u.name, 'locale', 'ro'),
+  now(), now(), '', '', '', ''
+from (values
+  ('d0000000-0000-4000-8000-000000000011'::uuid, 'cititor@lisette.local', 'Mihai Dobre'),
+  ('d0000000-0000-4000-8000-000000000012', 'scriitor@lisette.local', 'Ana Popescu')
+) u (id, email, name);
+
+update public.profiles
+set author_enabled = true, author_activated_at = now(), pen_name = 'Ana Popescu',
+  bio = 'Scriu proză scurtă și lucrez la primul meu roman.'
+where id = 'd0000000-0000-4000-8000-000000000012';
+
+update public.private_contacts set phone = '+40712345678' where user_id = 'd0000000-0000-4000-8000-000000000012';
 
 -- Password sign-in needs an email identity for each user.
 insert into auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)

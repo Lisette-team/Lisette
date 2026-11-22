@@ -4,8 +4,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BookReader } from "@/features/manuscripts/book-reader";
 import { WorkCover } from "@/features/manuscripts/work-cover";
+import { FrameOrnaments, FrameRule, framed } from "@/ui/frame-ornaments";
 import { Icon } from "@/ui/icon";
-import { colors, fonts, radius, space } from "@/ui/theme";
+import { colors, fonts, space } from "@/ui/theme";
 
 // The pages someone shared, in the page-turning reader (Text mode first), titled with the work.
 export function ShareReader({ shareVersionId, title, onClose }: { shareVersionId: string | null; title?: string | null; onClose(): void }) {
@@ -28,10 +29,12 @@ export function PageShareCover({ title, pageStart, pageEnd, onPress }: { title: 
   const pages = pageStart === pageEnd ? t("sharing.onePage", { page: pageStart }) : t("sharing.pageRange", { start: pageStart, end: pageEnd });
   const content = (
     <>
+      <FrameOrnaments />
       {/* The cover already carries the title, so the side shows only which pages. */}
       <WorkCover title={title} size={88} />
       <View style={styles.text}>
         <Text style={styles.pages}>{pages}</Text>
+        <FrameRule />
         {onPress ? (
           <View style={styles.read}>
             <Text style={styles.readLabel}>{t("sharing.readPages")}</Text>
@@ -51,10 +54,10 @@ export function PageShareCover({ title, pageStart, pageEnd, onPress }: { title: 
 
 const styles = StyleSheet.create({
   reader: { flex: 1, backgroundColor: colors.paper },
-  card: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, borderRadius: radius.card, borderWidth: 1, borderColor: colors.lineSoft, backgroundColor: colors.surface },
+  card: { ...framed, flexDirection: "row", alignItems: "center", gap: space.md, padding: space.md, backgroundColor: colors.surface },
   pressed: { backgroundColor: colors.pressed },
   text: { flex: 1, gap: space.xs },
   pages: { fontFamily: fonts.heading, fontSize: 19, color: colors.ink },
-  read: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: space.xs },
+  read: { flexDirection: "row", alignItems: "center", gap: 2 },
   readLabel: { fontFamily: fonts.uiSemiBold, fontSize: 14, color: colors.burgundy },
 });

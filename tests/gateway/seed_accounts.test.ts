@@ -11,7 +11,7 @@ const client = () => createClient(url, anonKey, { auth: { persistSession: false,
     "%s signs in as an approved publication",
     async (email) => {
       const db = client();
-      const { error } = await db.auth.signInWithPassword({ email, password: "local-only-password-1" });
+      const { error } = await db.auth.signInWithPassword({ email, password: "parola_test" });
       expect(error).toBeNull();
       const { data } = await db.rpc("get_session_context");
       expect(data).toMatchObject({ kind: "publisher", approvalStatus: "approved" });

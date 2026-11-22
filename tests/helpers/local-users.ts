@@ -21,7 +21,7 @@ export function adminClient() {
 
 export async function createVerifiedUser(locale: Locale = "ro") {
   const email = `reader-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
-  const password = "local-only-password-1";
+  const password = "parola_test";
   const { data, error } = await adminClient().auth.admin.createUser({
     email,
     password,
@@ -43,7 +43,7 @@ export type PublisherKind = "publishing_house" | "literary_magazine" | "independ
 export async function createApprovedPublisher(kind: PublisherKind = "publishing_house") {
   const admin = adminClient();
   const email = `publisher-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
-  const password = "local-only-password-1";
+  const password = "parola_test";
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password,

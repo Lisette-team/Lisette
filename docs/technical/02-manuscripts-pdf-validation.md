@@ -43,7 +43,7 @@ Automated checks on 2026-11-11 (Claude): typecheck, lint, 61 app tests, 153 SQL 
 | Android phone | _to test_ | | | | |
 
 1. `npx supabase db reset`, then `npx expo start`.
-2. **Publication:** sign in as `editura@lisette.local` / `local-only-password-1`. The menu shows Home, Discover, +, Calls, Profile. In Calls, create a call with a deadline, save, edit the title, publish. Check that it appears in Discover → Open calls. Cancel another call: it asks twice and then becomes read-only.
+2. **Publication:** sign in as `editura@lisette.local` / `parola_test`. The menu shows Home, Discover, +, Calls, Profile. In Calls, create a call with a deadline, save, edit the title, publish. Check that it appears in Discover → Open calls. Cancel another call: it asks twice and then becomes read-only.
 3. **Reader:** create an account, do not add the writer profile. Discover shows Publications and Open calls with filters, without checkboxes.
 4. **Writer:** add the writer profile, upload a manuscript, then set the phone with the SQL command from `01-database-local-development.md` ("A writer's phone").
 5. Press **Send to publications** on a version. Tick the editor's call (needs genre and synopsis) and the publishing house's always-open call. Pick a synopsis PDF and a genre. On review, check what each publication receives, tick the three boxes and send. Confirm with fingerprint or PIN.

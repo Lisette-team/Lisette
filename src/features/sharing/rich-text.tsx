@@ -7,6 +7,7 @@ import RenderHtml from "react-native-render-html";
 
 import { WorkCover } from "@/features/manuscripts/work-cover";
 import { supabase } from "@/lib/supabase";
+import { FrameOrnaments, FrameRule, framed } from "@/ui/frame-ornaments";
 import { Icon } from "@/ui/icon";
 import { colors, fonts, radius, space } from "@/ui/theme";
 
@@ -94,12 +95,14 @@ export function ExcerptFrame({ title, pages, verified = false, synopsis = false,
   const { t } = useTranslation();
   return (
     <View style={frame.card}>
+      <FrameOrnaments />
       <View style={frame.header}>
         {title ? <WorkCover title={title} size={28} /> : null}
         <Text style={frame.title} numberOfLines={1}>{synopsis ? (title ? t("sharing.synopsisOf", { title }) : t("sharing.synopsis")) : title ? t("sharing.fromWork", { title }) : t("sharing.excerpt")}</Text>
         {pages ? <Text style={frame.pages}>{t("sharing.pageShort", { pages })}</Text> : null}
       </View>
-      {synopsis ? <View style={frame.synopsisGap} /> : <Text style={frame.mark} accessibilityElementsHidden importantForAccessibility="no">„</Text>}
+      <FrameRule />
+      {synopsis ? null : <Text style={frame.mark} accessibilityElementsHidden importantForAccessibility="no">„</Text>}
       {children}
       {synopsis ? null : <Text style={frame.markEnd} accessibilityElementsHidden importantForAccessibility="no">”</Text>}
       {verified || footer ? (
@@ -128,8 +131,8 @@ export function PostBody({ body, title, pageStart, pageEnd, verified, reading = 
 }
 
 const frame = StyleSheet.create({
-  // The light cream card with a fine border, as the "Textul ales" box in v6, so it lifts off the paper page.
-  card: { backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.lineSoft, paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.sm },
+  // The light cream card framed like the logo's cover, so shared work stands out from plain posts.
+  card: { ...framed, backgroundColor: colors.surface, paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.sm },
   header: { flexDirection: "row", alignItems: "center", gap: space.sm },
   title: { flex: 1, fontFamily: fonts.uiSemiBold, fontSize: 13, color: colors.ink },
   pages: { fontFamily: fonts.uiSemiBold, fontSize: 12, color: colors.burgundy, backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2, overflow: "hidden" },
@@ -137,7 +140,6 @@ const frame = StyleSheet.create({
   // text below closer without clipping the glyph (a fixed height cut it into a closing mark).
   mark: { fontFamily: fonts.heading, fontSize: 48, lineHeight: 48, color: colors.burgundy, marginTop: -space.md, marginBottom: -space.md },
   markEnd: { alignSelf: "flex-end", fontFamily: fonts.heading, fontSize: 48, lineHeight: 48, height: 30, color: colors.burgundy },
-  synopsisGap: { height: space.sm },
   footer: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm, paddingTop: space.sm },
   verified: { flexDirection: "row", alignItems: "center", gap: 4 },
   verifiedText: { fontFamily: fonts.uiMedium, fontSize: 12, color: colors.burgundy },
