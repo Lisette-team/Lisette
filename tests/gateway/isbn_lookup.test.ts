@@ -10,7 +10,7 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 // A random valid ISBN-13, so reruns never collide with a book cached earlier.
 function randomIsbn() {
-  const body = `979${String(Math.floor(Math.random() * 1e9)).padStart(9, "0")}`;
+  const body = `979${1 + Math.floor(Math.random() * 9)}${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`;
   const sum = [...body].reduce((total, digit, i) => total + Number(digit) * (i % 2 === 0 ? 1 : 3), 0);
   return `${body}${(10 - (sum % 10)) % 10}`;
 }

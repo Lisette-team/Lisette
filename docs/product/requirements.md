@@ -1,7 +1,5 @@
 # Lisette — product requirements
 
-Organised functional specification for review: `../superpowers/specs/2026-10-17-lisette-functional-design.md`.
-
 Status: approved functional baseline with subsequent decisions incorporated; detailed technical defaults remain subject to plan review. Records approved product decisions; not a final implementation plan or a commitment to deliver every feature in eight weeks.
 
 ## Purpose and constraints
@@ -18,7 +16,9 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 ## Confirmed Manuscript Versions and Submission Copies
 - The first version accepts manuscript uploads in PDF format only. DOCX and other manuscript file formats are outside this initial scope. Validate actual supported file content as well as the filename before accepting an upload.
-- Authors maintain their own manuscript collection with multiple versions.
+- Authors maintain their own manuscript collection with multiple versions. They may star manuscripts, with starred items first; the first starred manuscript is featured. Favorites are visible only to the owner (decided 2026-11-17).
+- An author may select a main version on the manuscript detail screen. Sending starts with it by default; changing the version in a particular send does not change the main version. Uploading a version does not change it. Deleting the main version clears that choice (decided 2026-11-17).
+- Only versions never used in a submission, and manuscripts with no submissions, can be deleted. The recipient keeps the version it received. Deletion requires confirmation, not device authentication (decided 2026-11-17).
 - For each submission, the author selects the manuscript version to send. Different submissions may use different versions, or reuse the same one.
 - Authors can preview the selected PDF inside Lisette before submitting, to confirm the correct file/version. The preview is read-only and does not provide manuscript-content editing.
 - Each submission retains an immutable copy of its selected version. Metadata edits or newly uploaded manuscript versions do not change an already submitted copy; manuscript content is revised outside Lisette.
@@ -27,7 +27,7 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 ## Confirmed Submission Lifecycle and Publisher Contact
 - Lisette supports discovery and manuscript selection, not the subsequent editorial or publishing process. After selection, the publisher contacts the author directly and manages editing, contracts and publication through its own processes outside Lisette.
 - Submission statuses: Submitted, In review, Maybe, Selected by publisher, Rejected, Withdrawn. Submitted means the app has successfully recorded the submission; In review means the submission is in the publisher's evaluation period, set by the publisher. Selected means the publisher wants to discuss next steps, not that a publishing contract exists.
-- Whether the publisher has opened the manuscript is a separate publisher-side marker (Unopened / Opened) in the publisher's own inbox, not a status. Authors see In review only, never whether or when the manuscript was opened (confirmed 2026-10-18). Whether In review is set per submission, in bulk or when a call's period closes is a design choice.
+- Whether the publisher has opened the manuscript is a separate marker, not a status. The publisher sees Unopened / Opened in its inbox; the author sees whether the manuscript was opened, never when (decided 2026-11-18, reversing 2026-10-18). Whether In review is set per submission, in bulk or when a call's period closes is a design choice.
 - Authors may withdraw an individual submission while it is Submitted, In review, Maybe (author-facing: On hold / În așteptare) or Selected by publisher. Change its status to Withdrawn and show that status to the recipient publisher. A withdrawn submission cannot be selected by the publisher. Withdrawing one submission does not automatically withdraw submissions to other publishers.
 - After withdrawal, revoke the recipient publisher's access to that submission's manuscript and review materials in Lisette, including future authenticated file retrieval. Preserve the submission history and Withdrawn status. Withdrawal does not revoke access granted by a different active submission or affect the author's own manuscript collection.
 - Withdrawal from Maybe has the same access-revocation and sharing-restriction effects as withdrawal from Submitted or In review.
@@ -43,6 +43,7 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 - Selection by one publisher does not withdraw, close or change the status of submissions to other publishers. Those submissions remain active under their own access and sharing rules. The author decides separately whether to withdraw eligible submissions; selection does not imply exclusivity.
 - Publishers communicate their review and selection decisions through the relevant submission status. Revision requests, contract management and editorial workflows are outside the current product scope.
 - Before submitting, clearly disclose that the author's contact email and mandatory phone number will be shared with the selected recipient publishers and obtain their agreement. Do not expose those contact details publicly or to publishers that have not received a submission.
+- The author enters the phone number once, in a private contact-details section (decided 2026-11-11). Its screen belongs to the profile work and is not built yet; until then the send flow says the phone is missing and nothing can be sent.
 - Use the submission contact email and mandatory phone number for the publisher to contact the author directly after selection. Consent to that disclosure does not imply consent to unrelated marketing. Both a contact email and a phone number are required before manuscript submission, so recipient publishers have multiple contact methods. Requiring a phone number does not imply SMS verification; that has not been agreed.
 - The community can continue following an author and reading permitted public excerpts before and after selection. Publishers may discover existing reader interest through the author's public presence; no audience scoring or guaranteed readership is implied.
 
@@ -59,7 +60,7 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 - A meaningful short evaluation is required before a publisher can mark a submission Selected by publisher. Enforce this requirement in submission decision validation.
 - Evaluation is optional when marking a submission Maybe / On hold or Rejected.
 - Evaluation is private to the submitting author and recipient publisher, not public community content.
-- Exact field-level requirements, text limits and evaluation editing rules remain to be specified; mandatory evaluation does not imply all three prompts must be filled separately.
+- At least one of the three fields must contain non-whitespace text; their combined limit is 2000 characters. The recipient publication can edit a sent evaluation until the submission is withdrawn, including after selection or rejection. Each confirmed edit notifies the author.
 
 ## Confirmed Multi-Publisher Submission Flow
 - Each publisher configures whether resubmissions are allowed after withdrawal or final rejection. Apply that setting to direct submissions and its calls/competitions, alongside normal route availability and requirements. Show eligibility before sending. A permitted resubmission creates a new independent submission and preserves the previous history; it does not reopen or rewrite the previous record. Default setting and later policy changes remain design decisions.
@@ -72,13 +73,15 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 ## Confirmed Submission Requirements
 - Each publisher or submission call can configure which submission materials are required: full manuscript, synopsis, excerpt or sample chapters, literary genre, and a short author introduction.
+- Format (decided 2026-11-11): the synopsis and the sample chapters are uploaded as PDF files and checked like manuscripts; the short author introduction is a text field. Word documents are not accepted. Materials are given once per send and go only to the calls that ask for them.
 - Show the applicable requirements before the author submits. Validate required materials before accepting the submission.
 - Submission materials are private to the author and selected publisher. Providing a synopsis or sample for review does not publish it or bypass the separate reader-sharing approval policy.
 - These fields cover the current agreed scope; arbitrary custom questionnaires are not required.
 
 ## Confirmed Sharing Policy
-- Full manuscripts are private to the author and the publishers the author selects, except for pages the author explicitly shares with beta-readers. Reader sharing is separate: submitting a manuscript never automatically shares its text or synopsis with readers.
-- Authors control reader sharing by default and choose the exact synopsis or excerpt to share.
+- Implementation default (03.1): publish explicitly after the required approvals; decisions are final for a request and identical retries are idempotent. A revised text gets a new request, while its previously published version remains visible. The server checks newly applicable active submissions before publication.
+- Full manuscripts are private to the author and the publishers the author selects. The author may explicitly share selected pages with everyone, followers or invited beta-readers; readers receive only the selected pages, never the full manuscript through that share. Submitting a manuscript never automatically shares its text, synopsis or pages with readers (updated 2026-11-21).
+- Authors control reader sharing by default and choose the exact synopsis, excerpt or manuscript page range to share. Applicable excerpt-approval restrictions also cover shared pages (2026-11-21).
 - Each publisher configures its sharing policy in its account settings. The applicable publisher or competition restrictions must be shown before submission and explicitly accepted by the author.
 - MVP publisher settings: author-controlled sharing; synopsis approval only; or synopsis and excerpt approval. These settings identify which text types require approval; they do not automatically publish any text.
 - When approval is required, the publisher approves the exact text selected by the author before it becomes visible to readers. Approval of one selection does not approve different or edited text.
@@ -90,7 +93,7 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 
 
-- Reader audiences (confirmed 2026-10-18). An author chooses who sees each shared synopsis or excerpt: everyone signed in to Lisette (public), only the author's followers, or specific beta-readers. The same publisher-approval rules apply to every audience; a narrower audience does not bypass a required approval.
+- Reader audiences (confirmed 2026-10-18). An author chooses who sees each shared synopsis, excerpt or page range: everyone signed in to Lisette (public), only the author's followers, or specific beta-readers. The same publisher-approval rules apply to every audience; a narrower audience does not bypass a required approval.
 - Beta-readers (confirmed 2026-10-18). An author can invite specific readers as beta-readers for a work and decide how much they receive: selected chapters or a page range from a chosen manuscript version, up to the whole manuscript. Where accepted submission restrictions require approval, the applicable publishers approve that exact selection first, as for an excerpt. Beta-readers read only inside Lisette, with no download, and the author can revoke a beta-reader's access at any time; copies already seen cannot be recalled (confirmed 2026-10-18).
 - Publisher previews (confirmed 2026-10-21). A publisher can share quotes or selected fragments as previews and chooses the source in the app: a work confirmed as published by it, or a manuscript submitted to it. Quoting a received manuscript requires the author's approval of the exact text before it becomes visible. Publishers have no other use of submitted manuscript text.
 - Publishers can see what is already shared before accepting a submission. New restrictions never silently hide existing shared text.
@@ -120,6 +123,8 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 
 ## Confirmed Publisher Discovery Catalogue
 - Provide a searchable publisher catalogue so authors can discover recipients before submitting manuscripts.
+- Two views on one screen (decided 2026-11-11): **Open calls**, the default, lists every open call on its own with its publication, deadline, genres, languages and required materials, soonest deadline first and always-open calls after; **Publications** lists all publication kinds with what they look for in general and whether they have open calls. Both views share the genre, manuscript language and publication kind filters. Authors select calls directly to send to several. Opening the catalogue to send a manuscript starts on Open calls; browsing from Discover starts on Publications.
+- Every signed-in account sees the catalogue: readers, writers and publications. Only writers can send from it (decided 2026-11-11).
 - Publisher profiles show an introduction, accepted literary genres and manuscript languages, whether ongoing submissions are open, and currently open calls or competitions.
 - Support search and filtering by accepted genre, manuscript language and submission availability. Exact filter UI and search implementation remain design choices.
 - Show applicable requirements before submission. Catalogue discovery must not bypass manual publisher approval: unapproved publisher accounts cannot receive manuscripts.
@@ -288,6 +293,39 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 - Biometric protection is also included, with the agreed phone PIN/password fallback for manuscript upload confirmation and local private-manuscript unlock. It is additional to the sensor set above, not deferred.
 - Web supports library management, map viewing and viewing already unlocked discoveries. ISBN camera scanning and initial discovery unlock are Android-only in the first version. Other agreed web functions, including manuscript management and review, remain in scope.
 
+## Acceptance criteria
+The delivery plan maps each criterion to a task.
+
+| ID | Observable acceptance condition |
+|---|---|
+| AC-01 | Choosing Romanian or English persists and can be changed; manuscript-language eligibility is independent. |
+| AC-02 | Reader activation of author features retains the same account/library; no identity document is requested. |
+| AC-03 | An unapproved publisher cannot receive a direct or competition submission. |
+| AC-04 | Authors can preview the selected PDF read-only before sending; uploading a revised manuscript cannot change an already submitted version. |
+| AC-05 | A multi-recipient submission validates and displays each recipient's requirements, restrictions and contact disclosure. |
+| AC-06 | Missing email, phone, required materials or accepted declaration prevents a submission from being accepted. |
+| AC-07 | Selection without a short evaluation fails; selection of one submission does not close others. |
+| AC-08 | On hold is visible to the author, permits reading, blocks downloads and remains eligible for author withdrawal. |
+| AC-09 | Withdrawn/rejected submissions retain history but deny further manuscript/material access, including a previously obtained retrieval reference. |
+| AC-10 | Ending one submission's restrictions does not waive another applicable submission's required approval. |
+| AC-11 | An excerpt requiring approval stays private until all required approvals cover its exact text; edits do not inherit approval. |
+| AC-12 | Private manuscript/contact/evaluation data never appears in public profiles, search, reshares or work pages. |
+| AC-13 | Posts and excerpts support the agreed shared reaction set, comments and attributed public reshares. |
+| AC-14 | Content appears on a work page through the posting person's explicit work association, not automatic inference. |
+| AC-15 | Scanning/saving a book keeps its library entry private unless explicitly shared; connected events accurately identify the relationship. |
+| AC-16 | A publisher-author relationship remains non-public until confirmed by that author. |
+| AC-17 | Event discovery includes unfollowed accounts and supports the followed filter; Going does not create a booking. |
+| AC-18 | A locked discovery preview does not expose variant content; repeat unlocks retain the same assigned variant. |
+| AC-19 | After initial unlock, the collection presents the assigned variant without requiring the reader to remain at the location. |
+| AC-20 | Confirmed manuscript events create in-app and email notifications without exposing private data in public views. |
+| AC-21 | Reporting queues manual review and does not automatically remove content. |
+| AC-22 | Android phone and tablet layouts support the core flows; no manuscript-content editor is presented on Android or web. |
+| AC-23 | No reading data is collected from a reader who has not opted in; an author, and any publisher the author shares with, sees standard-consent patterns only once 10 readers opted in, sees below-threshold patterns only from readers who chose the no-threshold level, and never sees names; no audio is recorded; private manuscripts are never tracked. |
+| AC-24 | A followers-only excerpt is invisible to non-followers, including in search and reshares; a beta-reader sees only the pages shared with them; a required publisher approval applies to every audience. |
+| AC-25 | A reader has at most one rating and one review per book/work and can edit or delete them; reviews can be reported. |
+| AC-26 | Following an author produces an in-app notice when that author publishes a new excerpt visible to the follower or adds a publication. |
+| AC-27 | The author sees whether the publisher opened the manuscript, never when; the publisher’s inbox shows Unopened/Opened. Opening does not change the status. |
+
 ## Open product questions
 - No outstanding approval remains for discovery removal: stopping unlocks preserves existing access; full removal revokes it. Detailed recovery/retention implementation still needs design.
 - Detailed association management for books, profiles and events; post-selection sharing-policy changes; submission-history retention and account-deletion effects. Resolve these at the affected feature’s decision gate; they do not block the bilingual shell or PDF compatibility work.
@@ -298,4 +336,8 @@ Status: approved functional baseline with subsequent decisions incorporated; det
 The approved functional baseline supports implementation planning. Record new functional decisions here and keep technical contracts and sequenced tasks in the delivery plans. Resolve remaining questions at the affected feature’s decision gate; do not restart discovery for settled areas. Unanswered questions and technical proposals are not approved product decisions.
 
 ## Technical delivery proposal
-See `../superpowers/plans/2026-10-17-lisette-delivery.md` and its six linked subsystem plans. React Native with Expo and React Native Web (TypeScript) and Supabase (Postgres, Auth, Storage, Edge Functions) are approved (2026-10-21); the plans are approved for implementation. Database layout: `../superpowers/specs/2026-10-21-lisette-database-design.md`.
+See `../superpowers/plans/2026-10-17-lisette-delivery.md` and the module plans it links. React Native with Expo and React Native Web (TypeScript) and Supabase (Postgres, Auth, Storage, Edge Functions) are approved (2026-10-21); the plans are approved for implementation. Database layout: `../superpowers/specs/2026-10-21-lisette-database-design.md`.
+
+### Text format and images (2026-11-22)
+- Posts and excerpts use HTML with p, br, strong, em, u, s, blockquote, ul, ol, li, h3 and a; the app renders it natively. Limits are 3,000 and 10,000 visible characters, and raw HTML is capped at three times the applicable limit.
+- A post, excerpt, synopsis or page share has at most one image (page shares decided 2026-11-22). Changing an excerpt image creates a new text version requiring fresh approval.

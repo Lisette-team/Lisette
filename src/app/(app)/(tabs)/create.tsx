@@ -1,36 +1,49 @@
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { FragmentComposer } from "@/features/sharing/composer";
+import { Segmented } from "@/ui/segmented";
 import { useSession } from "@/features/account/session";
 import {
   ImageUploadError,
   MAX_IMAGES,
   MAX_POST_LENGTH,
-  accountName,
   createPost,
   prepareImage,
   searchPublicWorks,
   type PreparedImage,
   type WorkOption,
 } from "@/features/community/api";
-import { Avatar } from "@/ui/avatar";
 import { Button } from "@/ui/button";
 import { Icon } from "@/ui/icon";
 import { ErrorText, Screen } from "@/ui/screen";
 import { TextField } from "@/ui/text-field";
+import { ImageTiles } from "@/features/community/image-tiles";
+import { PostPreview, PreviewModal, PublishBar } from "@/features/community/post-preview";
+import { RichEditor } from "@/features/sharing/rich-editor";
+import { plainText } from "@/features/sharing/rich-text";
 import { colors, fonts, radius, space } from "@/ui/theme";
 
-// S-51: text and up to four images, with an optional book the poster picks themselves.
 export default function Create() {
+  const { t } = useTranslation();
+  const params = useLocalSearchParams<{ mode?: string; workId?: string; submissionId?: string }>();
+  const [mode, setMode] = useState<"post" | "fragment">(params.mode === "fragment" ? "fragment" : "post");
+  const [lastParams, setLastParams] = useState(`${params.mode ?? ""}:${params.workId ?? ""}:${params.submissionId ?? ""}`);
+  const currentParams = `${params.mode ?? ""}:${params.workId ?? ""}:${params.submissionId ?? ""}`;
+  if (currentParams !== lastParams) { setLastParams(currentParams); if (params.mode === "fragment") setMode("fragment"); }
+  const switcher = <Segmented<"post" | "fragment"> value={mode} onChange={setMode} options={[{ value: "post", label: t("sharing.postTab") }, { value: "fragment", label: t("sharing.fragmentTab") }]} />;
+  return mode === "fragment" ? <FragmentComposer switcher={switcher} workId={params.workId} submissionId={params.submissionId} /> : <PostComposer switcher={switcher} />;
+}
+
+// S-51: rich text and one image, with an optional book the poster picks themselves.
+function PostComposer({ switcher }: { switcher: React.ReactNode }) {
   const { t } = useTranslation();
   const session = useSession();
   const userId = session?.userId ?? "";
   const { pick } = useLocalSearchParams<{ pick?: string }>();
-  const [name, setName] = useState("");
   const [body, setBody] = useState("");
   const [images, setImages] = useState<PreparedImage[]>([]);
   const [picking, setPicking] = useState(pick === "work");
@@ -38,6 +51,7 @@ export default function Create() {
   const [workOptions, setWorkOptions] = useState<WorkOption[]>([]);
   const [work, setWork] = useState<WorkOption | null>(null);
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // The tab stays mounted, so "A book" on Home opens the picker by changing this parameter.
@@ -47,16 +61,6 @@ export default function Create() {
     if (pick === "work") setPicking(true);
   }
 
-  useEffect(() => {
-    if (!userId) return;
-    let active = true;
-    accountName(userId)
-      .then((value) => active && setName(value))
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [userId]);
 
   // Only the answer to the latest query is shown.
   const latestQuery = useRef("");
@@ -95,10 +99,10 @@ export default function Create() {
 
   async function publish() {
     setError(null);
-    if (!body.trim() && images.length === 0) return setError(t("community.postEmpty"));
+    if (!plainText(body) && images.length === 0) return setError(t("community.postEmpty"));
     setBusy(true);
     try {
-      const id = await createPost(userId, { body: body.trim(), images, workId: work?.id ?? null });
+      const id = await createPost(userId, { body: plainText(body) ? body : "", images, workId: work?.id ?? null });
       setBody("");
       setImages([]);
       chooseWork(null);
@@ -114,42 +118,12 @@ export default function Create() {
     <Screen
       title={t("community.composerTitle")}
       backLabel={t("common.back")}
-      footer={<Button label={t("community.publish")} busy={busy} onPress={publish} />}
     >
-      <TextField
-        label={t("community.bodyLabel")}
-        hint={t("community.publicNote")}
-        value={body}
-        onChangeText={setBody}
-        maxLength={MAX_POST_LENGTH}
-        multiline
-      />
+      {switcher}
+      <RichEditor label={t("community.bodyLabel")} value={body} onChange={setBody} reading={false} />
+      <Text style={styles.note}>{t("community.publicNote")}</Text>
 
-      <Text accessibilityRole="header" style={styles.section}>
-        {t("community.images")}
-      </Text>
-      <View style={styles.tiles}>
-        {images.map((asset) => (
-          <Pressable
-            key={asset.uri}
-            accessibilityRole="button"
-            accessibilityLabel={t("community.removeImage")}
-            onPress={() => setImages(images.filter((other) => other !== asset))}
-          >
-            <Image source={{ uri: asset.uri }} style={styles.tile} contentFit="cover" />
-          </Pressable>
-        ))}
-        {images.length < MAX_IMAGES ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("community.addImage")}
-            onPress={pickImages}
-            style={[styles.tile, styles.addTile]}
-          >
-            <Icon name="plus" color={colors.ink} size={28} />
-          </Pressable>
-        ) : null}
-      </View>
+      <ImageTiles images={images} max={MAX_IMAGES} onAdd={() => void pickImages()} onRemove={(image) => setImages(images.filter((other) => other !== image))} />
       <Text style={styles.note}>{t("community.limitsNote", { images: MAX_IMAGES, chars: MAX_POST_LENGTH })}</Text>
 
       <Pressable
@@ -189,36 +163,17 @@ export default function Create() {
         </View>
       ) : null}
 
-      <Text accessibilityRole="header" style={styles.section}>
-        {t("community.preview")}
-      </Text>
-      <View style={styles.preview}>
-        <View style={styles.previewAuthor}>
-          <Avatar id={userId} size={36} />
-          <View>
-            <Text style={styles.previewName}>{name}</Text>
-            <Text style={styles.note}>{t("community.time.now")}</Text>
-          </View>
-        </View>
-        {body.trim() ? <Text style={styles.previewBody}>{body.trim()}</Text> : null}
-        {images.length ? (
-          <View style={styles.tiles}>
-            {images.map((asset) => (
-              <Image key={asset.uri} source={{ uri: asset.uri }} style={styles.previewImage} contentFit="cover" />
-            ))}
-          </View>
-        ) : null}
-        {work ? <Text style={styles.note}>{t("community.linkedTo", { title: work.title })}</Text> : null}
-      </View>
-
       {error ? <ErrorText>{error}</ErrorText> : null}
+      <PublishBar previewDisabled={!plainText(body) && images.length === 0} onPreview={() => setPreview(true)} label={t("community.publish")} busy={busy} onPublish={() => void publish()} />
+      <PreviewModal visible={preview} onClose={() => setPreview(false)}>
+        <PostPreview userId={userId} body={body} imageUri={images[0]?.uri} note={work ? t("community.linkedTo", { title: work.title }) : undefined} />
+      </PreviewModal>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  section: { fontFamily: fonts.heading, fontSize: 20, color: colors.ink, marginTop: space.sm },
   note: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: colors.inkMuted },
   tiles: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   tile: { width: 88, height: 88, borderRadius: radius.card, backgroundColor: colors.surfaceMuted },

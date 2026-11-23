@@ -10,13 +10,16 @@ import { colors, fonts, space } from "@/ui/theme";
 // Placeholder for S-10/S-11 until profiles exist: the way to the writer role (S-05) and to Settings.
 export default function Profile() {
   const { t } = useTranslation();
-  const author = useSession()?.authorEnabled ?? false;
+  const session = useSession();
+  const author = session?.authorEnabled ?? false;
+  // A publication cannot become a writer: the account kind is fixed at sign-up.
+  const canAddWriter = session?.kind === "person" && !author;
 
   return (
     // Writers open Profile from the header, so they get a way back.
     <Screen title={t("nav.profile")} backLabel={author ? t("common.back") : undefined}>
       <Text style={styles.muted}>{t("common.comingSoon")}</Text>
-      {author ? null : (
+      {!canAddWriter ? null : (
         <View style={styles.section}>
           <Text style={styles.body}>{t("roles.writerBody")}</Text>
           <Button label={t("roles.writerTitle")} onPress={() => router.push("/role")} />

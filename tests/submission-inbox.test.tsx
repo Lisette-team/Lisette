@@ -1,0 +1,10 @@
+import { fireEvent, render, screen } from "@testing-library/react-native";
+import Inbox from "@/app/(app)/(tabs)/submissions";
+import i18n from "@/i18n";
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({ router: { push: mockPush, canGoBack: () => false }, Redirect: () => null, useFocusEffect: (fn: () => void) => require("react").useEffect(fn, [fn]) }));
+jest.mock("@/features/account/session", () => ({ useSession: () => ({ kind: "publisher", userId: "p" }) }));
+jest.mock("@/features/account/profile-button", () => ({ ProfileButton: () => null }));
+jest.mock("@/lib/supabase", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: [{ id: "a" }, { id: "b" }], error: null }) }) }) }), rpc: async (_: string, args: { submission_id: string }) => ({ data: { id: args.submission_id, status: "submitted", work_title: args.submission_id, author_name: "Ana", opened: args.submission_id === "a" }, error: null }) } }));
+beforeAll(() => i18n.changeLanguage("en"));
+test("inbox filters opened and unopened submissions", async () => { await render(<Inbox />); expect(await screen.findByText("a")).toBeOnTheScreen(); await fireEvent.press(screen.getByRole("tab", { name: "Unopened" })); expect(screen.queryByText("a")).toBeNull(); expect(screen.getByText("b")).toBeOnTheScreen(); });

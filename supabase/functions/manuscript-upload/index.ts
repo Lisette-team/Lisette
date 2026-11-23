@@ -1,5 +1,7 @@
 // Checks a manuscript PDF, stores it in the private bucket and records an immutable version.
 // Request: POST with the PDF as the whole body, and ?workId=…&label=… (label optional).
+// With ?purpose=material it stores a synopsis or sample PDF for a submission instead: no work, no version;
+// the answer is {storagePath}, which submit_manuscript accepts only from the same author.
 import { PDFDocument } from "npm:pdf-lib@1.17.1";
 
 import { admin, caller, cors, json, UUID } from "../_shared/caller.ts";
@@ -29,12 +31,17 @@ Deno.serve(async (req) => {
   if (!who) return json(401, { error: "unauthorized" });
 
   const params = new URL(req.url).searchParams;
+  const material = params.get("purpose") === "material";
   const workId = params.get("workId") ?? "";
-  if (!UUID.test(workId)) return json(400, { error: "bad_request" });
-
-  // Row-level security shows a private work only to its owner.
-  const { data: work } = await who.db.from("works").select("id").eq("id", workId).eq("owner_id", who.user.id).maybeSingle();
-  if (!work) return json(403, { error: "forbidden" });
+  if (material) {
+    const { data: profile } = await who.db.from("profiles").select("author_enabled").eq("id", who.user.id).maybeSingle();
+    if (!profile?.author_enabled) return json(403, { error: "forbidden" });
+  } else {
+    if (!UUID.test(workId)) return json(400, { error: "bad_request" });
+    // Row-level security shows a private work only to its owner.
+    const { data: work } = await who.db.from("works").select("id").eq("id", workId).eq("owner_id", who.user.id).maybeSingle();
+    if (!work) return json(403, { error: "forbidden" });
+  }
 
   // Refuse oversized bodies before reading them, then read the file once: the check, the hash and the
   // stored object all use this one copy.
@@ -44,9 +51,11 @@ Deno.serve(async (req) => {
   const pages = await pageCount(bytes);
   if (pages < 1) return json(422, { error: "invalid_pdf" });
 
-  const path = `${who.user.id}/${workId}/${crypto.randomUUID()}.pdf`;
+  const path = `${who.user.id}/${material ? "materials" : workId}/${crypto.randomUUID()}.pdf`;
   const stored = await admin.storage.from("manuscripts").upload(path, bytes, { contentType: "application/pdf" });
   if (stored.error) return json(500, { error: "upload_failed" });
+  // shortcut: a material uploaded for a batch that is never sent stays in the bucket; retention is undecided.
+  if (material) return json(201, { storagePath: path });
 
   const { data: version, error } = await admin.rpc("record_manuscript_version", {
     uploader: who.user.id,

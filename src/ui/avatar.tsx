@@ -11,7 +11,7 @@ const VARIANTS = [
   require("../../assets/illustrations/semn-avatar-ochelari.svg"),
 ];
 
-function hash(id: string) {
+export function hash(id: string) {
   let value = 0;
   for (const char of id) value = (value * 31 + char.charCodeAt(0)) >>> 0;
   return value;

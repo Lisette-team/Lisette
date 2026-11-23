@@ -1,0 +1,13 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+select has_column('public','text_versions','manuscript_version_id','share records source version');
+select has_column('public','text_versions','page_start','share records first page');
+select has_column('public','text_versions','page_end','share records last page');
+select has_column('public','text_versions','provenance_score','share records matching score');
+select has_column('public','share_private','source_text','share records extracted text');
+select has_column('public','share_private','pages_path','share records private subset path');
+select has_function('public','create_processed_share','server creates processed shares');
+select ok(not has_function_privilege('authenticated', 'public.create_processed_share(uuid,uuid,public.share_kind,public.excerpt_source,uuid,text,public.audience,uuid,integer,integer,double precision,text,text,text)', 'execute'), 'clients cannot forge a processed share');
+select * from finish();
+rollback;

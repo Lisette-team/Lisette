@@ -18,7 +18,7 @@ Delivery plan check for 02.1: owner PDF preview works on Android phone, tablet a
 | Platform | Device | Renders | Clears on lock | Clears on logout | Date, by |
 |---|---|---|---|---|---|
 | Web | Chromium (Playwright, headless), 900×1100 | Yes: 3-page test PDF, page 1 drawn, the rest on scroll | Yes: hiding the tab removes the iframe and shows Unlock | Yes: signed-out private routes redirect (existing guard) | 2026-10-24, Claude |
-| Android phone | _to test_ | | | | |
+| Android phone | Expo Go, model not recorded | Yes | Yes | Yes | 2026-11-11, Alex |
 | Android tablet | _to test_ | | | | |
 
 On web the same run also checked: upload from the UI (file picker, then a new work and version listed), and a renamed non-PDF rejected with "This file isn't a valid PDF".
@@ -32,3 +32,35 @@ On web the same run also checked: upload from the UI (file picker, then a new wo
 5. Lock the phone while reading, then unlock it: the reader must be closed and ask again.
 6. Sign out from Settings, then press back: you must not reach the reader.
 7. Write the result in the table above. If reading fails on a device, record the error and stop before 02.2.
+
+## 02.2 manual check: calls, catalogue and sending
+
+Automated checks on 2026-11-11 (Claude): typecheck, lint, 61 app tests, 153 SQL tests, 21 tests against the local stack, web export without the service-role key. The manual run below is still to do.
+
+| Platform | Device | Calls (publication) | Catalogue (reader) | Send (writer) | Date, by |
+|---|---|---|---|---|---|
+| Web | _to test_ | | | | |
+| Android phone | _to test_ | | | | |
+
+1. `npx supabase db reset`, then `npx expo start`.
+2. **Publication:** sign in as `editura@lisette.local` / `parola_test`. The menu shows Home, Discover, +, Calls, Profile. In Calls, create a call with a deadline, save, edit the title, publish. Check that it appears in Discover → Open calls. Cancel another call: it asks twice and then becomes read-only.
+3. **Reader:** create an account, do not add the writer profile. Discover shows Publications and Open calls with filters, without checkboxes.
+4. **Writer:** add the writer profile, upload a manuscript, then set the phone with the SQL command from `01-database-local-development.md` ("A writer's phone").
+5. Press **Send to publications** on a version. Tick the editor's call (needs genre and synopsis) and the publishing house's always-open call. Pick a synopsis PDF and a genre. On review, check what each publication receives, tick the three boxes and send. Confirm with fingerprint or PIN.
+6. The result shows both as Sent. Sending the same version to the same call again is refused with "Already in review with this work."
+7. On Android, open "Preview the PDF you're sending" from review and press back: the preview closes and review is still there.
+8. Write the result in the table above.
+
+
+## Manuscripts screens manual check
+
+| Platform | Device | Result | Date, by |
+|---|---|---|---|
+| Web | _to test_ | _to test_ | _to test_ |
+| Android (Expo Go) | _to test_ | _to test_ | _to test_ |
+
+1. Upload a new manuscript and then a second version.
+2. Star it, set v1 as main, and start a send: the calls step opens without a version question.
+3. Clear the main version and start a send: choose a version first.
+4. Delete an unsent version, then try to delete a sent version; the latter must remain unavailable.
+5. Open Submissions and check the publication, call and status.

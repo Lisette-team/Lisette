@@ -13,7 +13,7 @@ export function TextField({ label, hint, inputRef, ...inputProps }: Props) {
         ref={inputRef}
         accessibilityLabel={label}
         placeholderTextColor={colors.inkMuted}
-        style={styles.input}
+        style={[styles.input, inputProps.multiline && styles.multiline]}
         {...inputProps}
       />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
@@ -39,5 +39,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.ink,
   },
+  // Several lines: taller, text from the top.
+  multiline: { minHeight: 120, paddingVertical: space.md, textAlignVertical: "top" },
   hint: { fontFamily: fonts.ui, fontSize: 14, color: colors.inkMuted },
 });

@@ -27,5 +27,5 @@ Base palette is approved from `assets/ColorPaletteProposition.png`. Its illustra
 The brand foundation is usable now. Remaining product and implementation decisions do not reopen approved identity choices.
 
 ## Product design
-The English functional specification is `../docs/superpowers/specs/2026-10-17-lisette-functional-design.md` (functional direction approved; technical plan review separate). It organises product requirements into modules, proposed screens, permissions, data relationships and acceptance criteria without choosing a backend or starting implementation. Proposed screen specifications are in `../docs/product/screens.md`; draft interface copy is in `../src/i18n/` (Romanian copy pending review).
+Functional requirements are in `../docs/product/requirements.md`; screen specifications are in `../docs/product/screens.md`; interface copy is in `../src/i18n/` (Romanian copy pending review).
 The v6 working design (2026-10-21) is in `../docs/design/README.md`: screen PNGs, boards, assets and derived tokens as a visual reference only, not approved identity.

@@ -30,6 +30,8 @@ The keys `supabase start` prints are local defaults, safe for development only. 
 
 Changes to `supabase/config.toml` apply only after `supabase stop` and `supabase start`; `db reset` does not reload them.
 
+If Edge Functions answer 503 (the edge runtime log says "failed to determine entrypoint"), usually after switching branches, restart the stack: `supabase stop && supabase start`. The data is kept.
+
 ## Auth
 
 - Email + password, with email verification on (`enable_confirmations = true`). Locally, verification and password-recovery emails are not sent; open them in Mailpit.
@@ -75,6 +77,29 @@ Admins are person accounts listed in `public.admins`. The app can never add one.
 insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';
 ```
 
+## Seeded publications (local only)
+
+`supabase db reset` loads `supabase/seed.sql`: three approved publications, so calls, the catalogue and submissions can be tried before publication sign-up exists. These logins exist only in the local stack.
+
+| Email | Password | Kind | Calls |
+|---|---|---|---|
+| `editura@lisette.local` | `parola_test` | publishing house | one with a deadline, one always open |
+| `revista@lisette.local` | `parola_test` | literary magazine | one closed, one draft |
+| `editor@lisette.local` | `parola_test` | independent editor | one always open (genre and synopsis required) |
+
+The seed also has a reader and a writer (with the phone already set). All seeded logins are listed in `02-test-accounts.md`. It has no manuscripts.
+
+These logins have a password that is in git. Never load the seed into a hosted database: no `supabase db reset --linked`, no `supabase db push --include-seed`, and turn the seed off for preview branches if Supabase Branching is ever enabled.
+
+**A writer's phone (workaround).** A submission needs a phone number, and the screen to enter it is not built yet (it belongs to the profile work). Set it locally after creating the writer, and again after every `supabase db reset`:
+
+```bash
+psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+  -c "update public.private_contacts set phone = '+40712345678' where contact_email = 'writer@example.com'"
+```
+
+The same works in the Studio SQL editor (http://127.0.0.1:54323).
+
 ## SQL tests
 
 Tests are pgTAP files named `<acceptance_name>.test.sql`. Each one runs inside a transaction and rolls back. To act as a user, insert a row into `auth.users` (the trigger creates the account), then switch role:
@@ -88,7 +113,7 @@ Use `reset role;` to go back to the superuser, and `set local role anon;` to tes
 
 ## Fixtures
 
-Tests create their own users and roll back, so they need no fixtures. Shared demo data for the app goes in `supabase/seed.sql` (not created yet); `db reset` loads it after the migrations.
+Tests create their own users and roll back, so they need no fixtures. Shared demo data for the app is in `supabase/seed.sql`; `db reset` loads it after the migrations.
 
 ## Edge Functions
 

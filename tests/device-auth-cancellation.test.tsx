@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 
-import Manuscripts from "@/app/(app)/(tabs)/manuscripts";
+import Upload from "@/app/(app)/upload";
 import Reader from "@/app/(app)/reader/[versionId]";
 import * as api from "@/features/manuscripts/api";
 import i18n from "@/i18n";
@@ -20,9 +20,9 @@ jest.mock("expo-document-picker", () => ({
   }),
 }));
 jest.mock("expo-router", () => ({
-  router: { back: jest.fn(), push: jest.fn(), canGoBack: () => false },
+  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), canGoBack: () => false },
   Redirect: () => null,
-  useLocalSearchParams: () => ({ versionId: "v-1" }),
+  useLocalSearchParams: () => ({ versionId: "v-1", workId: "work-1" }),
 }));
 jest.mock("@/features/account/session", () => ({ useSession: () => ({ userId: "user-1", locale: "en", authorEnabled: true }) }));
 jest.mock("@/features/manuscripts/api");
@@ -66,13 +66,14 @@ describe("device_auth_cancellation", () => {
   describe("screens", () => {
     beforeEach(() => {
       jest.clearAllMocks();
-      mockApi.listWorks.mockResolvedValue([{ id: "work-1", title: "Roman", versions: [] }]);
+      mockApi.listWorks.mockResolvedValue([{ id: "work-1", title: "Roman", is_starred: false, main_version_id: null, versions: [] }]);
     });
 
     test("cancelling does not upload", async () => {
       mockConfirm.mockResolvedValue("cancelled");
-      await render(<Manuscripts />);
-      await fireEvent.press(await screen.findByRole("button", { name: "New version" }));
+      await render(<Upload />);
+      await fireEvent.press(await screen.findByRole("button", { name: "Choose PDF" }));
+      await fireEvent.press(screen.getByRole("button", { name: "Confirm upload" }));
 
       await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
       expect(mockApi.uploadVersion).not.toHaveBeenCalled();
@@ -82,8 +83,9 @@ describe("device_auth_cancellation", () => {
     test("confirming uploads the picked file", async () => {
       mockConfirm.mockResolvedValue("confirmed");
       mockApi.uploadVersion.mockResolvedValue({ id: "v-2" } as api.ManuscriptVersion);
-      await render(<Manuscripts />);
-      await fireEvent.press(await screen.findByRole("button", { name: "New version" }));
+      await render(<Upload />);
+      await fireEvent.press(await screen.findByRole("button", { name: "Choose PDF" }));
+      await fireEvent.press(screen.getByRole("button", { name: "Confirm upload" }));
 
       await waitFor(() => expect(mockApi.uploadVersion).toHaveBeenCalledWith("work-1", expect.objectContaining({ name: "roman.pdf" }), ""));
     });

@@ -17,6 +17,7 @@ jest.mock("@/lib/supabase", () => ({
     return mockSupabase;
   },
 }));
+jest.mock("@/features/manuscripts/pdf-reader", () => ({ PdfReader: () => null }));
 jest.mock("@/ui/launch-video", () => ({ LaunchVideo: () => null }));
 // The permission rules live in the database and are covered by community_permissions.test.sql;
 // these tests check what the screens send and show.
@@ -91,6 +92,18 @@ describe("home feed", () => {
 
     expect(await screen.findByText("Primul meu text")).toBeOnTheScreen();
     expect(screen.getByText("Ana")).toBeOnTheScreen();
+  });
+
+  test("a page share says what was shared next to the name and shows the cover, not a page label", async () => {
+    api.feedPage.mockResolvedValue([
+      post({ body: "<p>p. 3–7</p>", shareKind: "beta_pages", shareVersionId: "tv", pageStart: 3, pageEnd: 7, workId: "w", workTitle: "Gurmandul" }),
+    ]);
+    await signedIn("/home");
+
+    expect(await screen.findByText(/shared a few pages from Gurmandul/)).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Read pages: Gurmandul, Pages 3–7" })).toBeOnTheScreen();
+    expect(screen.queryByText("p. 3–7")).toBeNull();
+    expect(screen.queryByText("Linked book: Gurmandul")).toBeNull();
   });
 
   test("suggests following people when the feed is empty", async () => {

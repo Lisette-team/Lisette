@@ -10,6 +10,9 @@ export const colors = {
   line: "#9C8D80",
   field: "#FCF8F1",
   surfaceMuted: "#EFE6D8",
+  // v6 working tones (docs/design/tokens.json), not approved palette entries.
+  hairline: "#E0D4C2",
+  pressed: "#E5D9C6",
   shadow: "#2E1F1A24",
   onBurgundy: "#FFFFFF",
   // v6 working tokens (docs/design/tokens.json): cards, fine separators, active and warm backgrounds.
@@ -35,6 +38,9 @@ export const fonts = {
 export const space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 } as const;
 
 export const radius = { field: 12, card: 20, sheet: 24, pill: 999 } as const;
+
+// Side margin of every screen, from v6.
+export const gutter = 20;
 
 // Content column width on tablets and web, so actions never stretch or clip.
 export const contentMaxWidth = 480;

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import type { ReactNode, Ref } from "react";
+import { createContext, useContext, type ReactNode, type Ref } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,8 +12,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { blurEditorsOutside } from "./editor-focus";
 import { Icon } from "./icon";
-import { colors, contentMaxWidth, fonts, space } from "./theme";
+import { colors, contentMaxWidth, fonts, gutter, space } from "./theme";
 
 type Props = {
   title?: string;
@@ -25,41 +26,61 @@ type Props = {
   footer?: ReactNode;
   // Lets a screen scroll itself, for example to a field at the bottom once the keyboard is open.
   scrollRef?: Ref<ScrollViewInstance>;
+  // Pin actions for lists and multi-step flows that do not open the keyboard.
+  pinFooter?: boolean;
 };
 
-export function Screen({ title, backLabel, action, children, footer, scrollRef }: Props) {
+// Set around the tab navigator: its tab bar already pads the bottom inset, so tab screens skip it.
+export const InTabsContext = createContext(false);
+
+export function Screen({ title, backLabel, action, children, footer, scrollRef, pinFooter = false }: Props) {
+  const inTabs = useContext(InTabsContext);
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={inTabs ? ["top", "left", "right"] : undefined}>
       {/* Android draws edge to edge, so the window no longer shrinks for the keyboard: make room here. */}
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "web" ? undefined : "padding"}>
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.column}>
-            {title ? (
-              <View style={styles.header}>
-                {backLabel && router.canGoBack() ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={backLabel}
-                    hitSlop={12}
-                    onPress={() => router.back()}
-                  >
-                    <Icon name="arrowLeft" color={colors.ink} size={28} />
-                  </Pressable>
-                ) : null}
-                <Text accessibilityRole="header" style={styles.title}>
-                  {title}
-                </Text>
-                {action}
-              </View>
+        {title ? (
+          <TopBar>
+            {backLabel && router.canGoBack() ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={backLabel}
+                hitSlop={12}
+                onPress={() => router.back()}
+              >
+                <Icon name="arrowLeft" color={colors.ink} size={28} />
+              </Pressable>
             ) : null}
+            <Text accessibilityRole="header" style={titleStyle}>{title}</Text>
+            {action}
+          </TopBar>
+        ) : null}
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" onTouchStart={(event) => blurEditorsOutside(event.nativeEvent.pageX, event.nativeEvent.pageY)}>
+          <View style={styles.column}>
             <View style={styles.body}>{children}</View>
-            {footer ? <View style={styles.footer}>{footer}</View> : null}
+            {footer && !pinFooter ? <View testID="screen-footer" style={styles.footer}>{footer}</View> : null}
           </View>
         </ScrollView>
+        {footer && pinFooter ? (
+          <View testID="screen-footer" style={styles.pinned}>
+            <View style={styles.pinnedColumn}>{footer}</View>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
+
     </SafeAreaView>
   );
 }
+
+export function TopBar({ children }: { children: ReactNode }) {
+  return (
+    <View testID="screen-header" style={styles.topBar}>
+      <View style={styles.topBarColumn}>{children}</View>
+    </View>
+  );
+}
+
+export const titleStyle = { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.ink } as const;
 
 export function ErrorText({ children }: { children: ReactNode }) {
   return (
@@ -77,12 +98,21 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     maxWidth: contentMaxWidth,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: gutter,
     paddingVertical: space.lg,
   },
-  header: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.lg },
-  title: { flex: 1, fontFamily: fonts.heading, fontSize: 28, color: colors.ink },
+  topBar: { alignItems: "center", backgroundColor: colors.paper, borderBottomWidth: 1, borderBottomColor: colors.lineSoft },
+  topBarColumn: { width: "100%", maxWidth: contentMaxWidth, minHeight: 56, paddingHorizontal: gutter, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.md },
   body: { flex: 1, gap: space.md },
   footer: { gap: space.sm, paddingTop: space.xl },
+  pinned: {
+    alignItems: "center",
+    paddingTop: space.md,
+    paddingBottom: space.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    backgroundColor: colors.paper,
+  },
+  pinnedColumn: { width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: gutter, gap: space.sm },
   error: { fontFamily: fonts.uiMedium, fontSize: 15, color: colors.burgundy },
 });

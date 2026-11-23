@@ -1,17 +1,14 @@
 # Lisette project instructions
 
-Before planning, designing, writing copy or building anything for Lisette, read `brand/README.md`, `brand/brand.yaml` and `brand/context.md`. Then read the relevant guides listed in the README. Apply these references to app screens, websites, graphics, presentations and project documentation.
+## Read only what the task needs
+- Implementation: `docs/superpowers/plans/2026-10-17-lisette-delivery.md` (rules, task list), then the task's module plan.
+- Behaviour: the relevant sections of `docs/product/requirements.md` (its sharing and manuscript-protection policies apply everywhere) and the screen's entry in `docs/product/screens.md`.
+- Database: the relevant section of `docs/superpowers/specs/2026-10-21-lisette-database-design.md`. Tables, columns, types, allowed values and limits come only from it and `lisette-schema.html`; plans never redefine them. Record schema changes in both. In the HTML, edit only the affected card and the changelog; do not read it whole.
+- Interface copy: `brand/brand.yaml` and `brand/voice.md`. Visual work: also `brand/identity.md` and `docs/design/README.md` (visual reference only). The other brand guides are for brand, marketing or naming work only.
 
-Use approved brand decisions as constraints. Preserve exact approved taglines and the Romanian central promise, including diacritics. Drafts, historical research, personas and reference artwork are not approved facts or production assets. Do not promote them to approved status without the user's decision.
-
-Keep brand identity, product vision and implementation planning distinct. Do not reopen settled brand decisions during routine work or treat a candidate feature list as a finalized MVP. Flag any material conflict with approved decisions and explain it briefly; follow the user's latest explicit instruction.
-
-Do not claim planned features, publisher partnerships, security guarantees or outcomes already exist. Verification of an upload or device credential is not proof of authorship. For functional work, read `docs/product/requirements.md`, including sharing and manuscript-protection policies.
-
-For Expo / React Native work, use the `expo` plugin skills, starting with `expo:expo-overview`. For a plan task, use `superpowers:executing-plans` and `superpowers:test-driven-development`. Development runs in Expo Go; native-only modules use an EAS development build, never a local Android SDK.
-
-For implementation work, also read `docs/superpowers/plans/2026-10-17-lisette-delivery.md` (stack, rules for every task, who does what, order) and the module plan of the task. Tables, columns, types, allowed values and limits come only from `docs/superpowers/specs/2026-10-21-lisette-database-design.md` and `docs/superpowers/specs/lisette-schema.html`; plans name tables but never redefine them. Record schema changes in both files.
-
-When an approved decision changes, update its canonical reference and affected guides together. Keep `brand/brand.yaml` consistent.
-
-Record functional decisions in `docs/product/requirements.md`; keep brand identity in `brand/`. The product requirements are a working specification, not a finalized implementation plan.
+## Constraints
+- Preserve exact approved taglines and the Romanian central promise, with diacritics. Drafts, research, personas and reference artwork are not approved facts or production assets; do not promote them without the user's decision.
+- Do not reopen settled brand decisions or treat a candidate feature list as a finalized MVP. Flag a material conflict with an approved decision briefly, then follow the user's latest explicit instruction.
+- Do not claim planned features, publisher partnerships, security guarantees or outcomes already exist. Verifying an upload or device credential is not proof of authorship.
+- When an approved decision changes, update its canonical reference and affected guides together and keep `brand/brand.yaml` consistent. Functional decisions go in `docs/product/requirements.md`; brand identity stays in `brand/`.
+- Expo / React Native work: use the `expo` plugin skills, starting with `expo:expo-overview`. Write tests first (`superpowers:test-driven-development`). Native-only modules use an EAS development build, never a local Android SDK.

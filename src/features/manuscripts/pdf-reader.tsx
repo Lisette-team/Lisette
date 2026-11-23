@@ -5,12 +5,12 @@ import { colors } from "@/ui/theme";
 
 import { useReaderHtml, type ReaderMessage } from "./reader-html";
 
-type Props = { versionId: string; onMessage(message: ReaderMessage): void };
+type Props = { versionId: string; submissionId?: string; materialId?: string; selection?: boolean; pageSelection?: boolean; thumbnailPage?: number; selectionLabel?: string; shareVersionId?: string; book?: string; onMessage(message: ReaderMessage): void };
 
 // Android: PDF.js in a WebView (works in Expo Go). Incognito with the cache off, so closing the
 // reader leaves no copy behind; the parent unmounts it on lock and logout.
-export function PdfReader({ versionId, onMessage }: Props) {
-  const html = useReaderHtml(versionId);
+export function PdfReader({ versionId, submissionId, materialId, selection, pageSelection, selectionLabel, shareVersionId, thumbnailPage, book, onMessage }: Props) {
+  const html = useReaderHtml(versionId, submissionId, materialId, selection, selectionLabel, shareVersionId, pageSelection, thumbnailPage, book);
   if (!html) return <ActivityIndicator color={colors.burgundy} />;
   return (
     <WebView

@@ -7,7 +7,7 @@
 - **Name**: Lisette
 - **Category**: Literary / publishing technology (mobile app with a web extension)
 - **Description**: A literary hub for readers, writers and publishers: manuscript submission to publishers in one place, a community where all three post and follow each other, a personal library where you scan, review and rate your books, and a literary map with events and location-based discoveries. It is also where readers support their favorite authors, by following them, beta-reading when invited, reviewing their work and helping it grow.
-- **Stage**: Pre-launch, in development. Built as an entry for an app competition, by a team of 2 over about 8 weeks. Nothing is built yet.
+- **Stage**: Pre-launch, in development. Built as an entry for an app competition, by a team of 2 over about 8 weeks; the delivery plan lists what is built.
 - **Website**: N/A
 
 ## Market and Languages (confirmed 2026-10-17)
@@ -33,7 +33,7 @@
   - Writers, readers, and publishers share one space.
   - Readers are active supporters, not just an audience. They follow authors, read excerpts shared with everyone or with followers, beta-read pages when an author invites them, get notified when a followed author publishes, review and rate books, share quotes, and see what the authors they follow are reading.
   - Authors see opt-in, aggregated reading patterns (heatmap) on their public excerpts and may share them with publishers they choose. There is no audience score.
-  - Privacy-first for full manuscripts: kept in private storage (not encrypted), open only to the author, the publishers the author chooses and any pages shared with invited beta-readers, with protected access and a record of the uploaded version and upload time. These records do not verify authorship.
+  - Privacy-first for full manuscripts: kept in private storage (not encrypted), open only to the author, the publishers the author chooses and any pages explicitly shared with readers or invited beta-readers, with protected access and a record of the uploaded version and upload time. These records do not verify authorship.
 - **Competitors** (draft, from general knowledge, to verify): Goodreads and StoryGraph (reading community), LibraryThing (cataloguing), Wattpad (writer-reader publishing), Submittable / Duotrope / Query Tracker (submission tracking), Twitter/X and Bluesky (writing community), and email plus manual submissions as the real status quo. The original concept named Twitter and LibraryThing as models.
 - **Market Position**: A literary community for three equally central groups: writers, readers and publishers. Debut writers are the first recruitment group.
 

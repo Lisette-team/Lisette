@@ -11,13 +11,15 @@ import { colors, fonts } from "@/ui/theme";
 
 import { useSession } from "./session";
 
-type Item = { name: string; href: "/home" | "/discover" | "/library" | "/manuscripts" | "/profile"; icon: IconName };
+type Item = { name: string; href: "/home" | "/discover" | "/library" | "/manuscripts" | "/calls" | "/profile" | "/submissions"; icon: IconName };
 
 const ITEMS: Item[] = [
   { name: "home", href: "/home", icon: "home" },
   { name: "discover", href: "/discover", icon: "compass" },
   { name: "library", href: "/library", icon: "library" },
   { name: "manuscripts", href: "/manuscripts", icon: "manuscript" },
+  { name: "calls", href: "/calls", icon: "calendar" },
+  { name: "submissions", href: "/submissions", icon: "send" },
   { name: "profile", href: "/profile", icon: "user" },
 ];
 
@@ -27,6 +29,7 @@ const SECTION: Record<string, string> = {
   book: "library",
   post: "home",
   reader: "manuscripts",
+  call: "calls",
   settings: "profile",
   role: "profile",
 };
@@ -71,7 +74,10 @@ export function SideNav() {
 
   const first = pathname.split("/").filter(Boolean)[0] ?? "home";
   const current = SECTION[first] ?? first;
-  const items = ITEMS.filter((item) => item.name !== "manuscripts" || session?.authorEnabled);
+  const items = ITEMS.filter((item) => {
+    if (session?.kind === "publisher") return item.name !== "library" && item.name !== "manuscripts" && item.name !== "profile";
+    return item.name !== "calls" && item.name !== "submissions" && (item.name !== "manuscripts" || session?.authorEnabled);
+  });
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top + 36, paddingLeft: insets.left + 16 }]}>

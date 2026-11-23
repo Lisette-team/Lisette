@@ -22,8 +22,8 @@ import { Avatar } from "@/ui/avatar";
 import { Button } from "@/ui/button";
 import { Icon, type IconName } from "@/ui/icon";
 import { useWide } from "@/ui/layout";
-import { ErrorText } from "@/ui/screen";
-import { colors, contentMaxWidth, fonts, radius, space } from "@/ui/theme";
+import { ErrorText, TopBar } from "@/ui/screen";
+import { colors, contentMaxWidth, fonts, gutter, radius, space } from "@/ui/theme";
 
 const HEADERS = {
   morning: require("../../../../assets/illustrations/antet-dimineata.svg"),
@@ -113,7 +113,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Stays at the top while the street illustration and the feed scroll under it. */}
-      <View style={styles.topBar}>
+      <TopBar>
         {wide ? (
           // The sidebar already carries the wordmark; on wide screens the page has its own create
           // action instead of the phone's + button.
@@ -132,8 +132,8 @@ export default function Home() {
             <Text style={styles.wordmark}>Lisette</Text>
           </View>
         )}
-        <ProfileButton always size={40} />
-      </View>
+        <ProfileButton />
+      </TopBar>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Image
           source={HEADERS[part]}
@@ -218,16 +218,6 @@ function Chip({ icon, label, onPress }: { icon: IconName; label: string; onPress
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.paper },
   scroll: { flexGrow: 1, alignItems: "center", paddingBottom: space.xl },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 56,
-    paddingHorizontal: space.lg - 4,
-    backgroundColor: colors.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.lineSoft,
-  },
   brand: { flexDirection: "row", alignItems: "center", gap: space.sm },
   newPost: {
     flexDirection: "row",
@@ -243,7 +233,7 @@ const styles = StyleSheet.create({
   mark: { width: 24, height: 35 },
   wordmark: { fontFamily: fonts.heading, fontSize: 22, color: colors.ink },
   header: { width: "100%", aspectRatio: 360 / 150, maxHeight: 220 },
-  column: { flex: 1, width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: space.lg - 4, gap: space.md },
+  column: { flex: 1, width: "100%", maxWidth: contentMaxWidth, paddingHorizontal: gutter, gap: space.md },
   greeting: { fontFamily: fonts.heading, fontSize: 30, lineHeight: 36, color: colors.ink, marginTop: space.lg },
   greetingName: { color: colors.burgundy },
   subtitle: { fontFamily: fonts.ui, fontSize: 14, lineHeight: 20, color: colors.inkMuted },

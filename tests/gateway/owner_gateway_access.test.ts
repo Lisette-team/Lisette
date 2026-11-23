@@ -2,27 +2,16 @@
 // SUPABASE_SERVICE_ROLE_KEY from `npx supabase status`; skipped otherwise.
 import { createClient } from "@supabase/supabase-js";
 
-import { anonKey, createVerifiedUser, deleteAuthor, localSupabaseAvailable, url } from "../helpers/local-users";
-
-// Smallest well-formed PDF: one empty page, with a correct cross-reference table.
-function onePagePdf(): Uint8Array<ArrayBuffer> {
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>",
-  ];
-  let body = "%PDF-1.4\n";
-  const offsets = objects.map((object, i) => {
-    const offset = body.length;
-    body += `${i + 1} 0 obj\n${object}\nendobj\n`;
-    return offset;
-  });
-  const xref = body.length;
-  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  body += offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("");
-  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return new TextEncoder().encode(body);
-}
+import {
+  anonKey,
+  createApprovedPublisher,
+  createVerifiedUser,
+  deleteAuthor,
+  deletePublisher,
+  localSupabaseAvailable,
+  url,
+} from "../helpers/local-users";
+import { onePagePdf } from "../helpers/pdf";
 
 const functions = `${url}/functions/v1`;
 
@@ -37,6 +26,19 @@ const text = (value: string) => new TextEncoder().encode(value);
 function upload(token: string | null, workId: string, file: Uint8Array<ArrayBuffer>) {
   const query = new URLSearchParams({ workId, label: "v1 după redactare" });
   return fetch(`${functions}/manuscript-upload?${query}`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      "Content-Type": "application/pdf",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: file,
+  });
+}
+
+// A synopsis or sample PDF for a submission: no work, no version.
+function uploadMaterial(token: string | null, file: Uint8Array<ArrayBuffer>) {
+  return fetch(`${functions}/manuscript-upload?purpose=material`, {
     method: "POST",
     headers: {
       apikey: anonKey,
@@ -71,6 +73,7 @@ async function signIn(user: { email: string; password: string }) {
   let ana: Awaited<ReturnType<typeof signIn>>;
   let bogdan: Awaited<ReturnType<typeof signIn>>;
   let workId: string;
+  let anaId: string;
   let version: { id: string; sha256: string; byte_size: number; page_count: number; label: string };
 
   const users: string[] = [];
@@ -79,6 +82,7 @@ async function signIn(user: { email: string; password: string }) {
     const anaUser = await createVerifiedUser();
     const bogdanUser = await createVerifiedUser();
     users.push(anaUser.id, bogdanUser.id);
+    anaId = anaUser.id;
     ana = await signIn(anaUser);
     bogdan = await signIn(bogdanUser);
     await ana.client.rpc("activate_author");
@@ -152,6 +156,31 @@ async function signIn(user: { email: string; password: string }) {
 
   test("a file with only a PDF header is rejected", async () => {
     expect((await upload(ana.token, workId, text("%PDF-1.4\ngarbage"))).status).toBe(422);
+  });
+
+  test("an author uploads a material PDF into her own materials folder", async () => {
+    const response = await uploadMaterial(ana.token, pdf);
+    expect(response.status).toBe(201);
+    const { storagePath } = await response.json();
+    expect(storagePath).toMatch(new RegExp(`^${anaId}/materials/[0-9a-f-]{36}\\.pdf$`));
+    const { count } = await ana.client.from("manuscript_versions").select("*", { count: "exact", head: true });
+    expect(count).toBe(1);
+  });
+
+  test("a material must be a real PDF", async () => {
+    expect((await uploadMaterial(ana.token, text("PK\u0003\u0004 not a pdf"))).status).toBe(422);
+  });
+
+  test("only authors upload materials", async () => {
+    expect((await uploadMaterial(bogdan.token, pdf)).status).toBe(403);
+    expect((await uploadMaterial(null, pdf)).status).toBe(401);
+    const publisherUser = await createApprovedPublisher();
+    try {
+      const publisher = await signIn(publisherUser);
+      expect((await uploadMaterial(publisher.token, pdf)).status).toBe(403);
+    } finally {
+      await deletePublisher(publisherUser.id);
+    }
   });
 
   test("a file over 20 MiB is rejected", async () => {
